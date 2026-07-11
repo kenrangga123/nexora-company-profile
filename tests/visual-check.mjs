@@ -68,16 +68,38 @@ for (const section of ["services", "solutions", "work", "industries", "process",
   await desktop.locator(`#${section}`).scrollIntoViewIfNeeded();
   await desktop.waitForTimeout(760);
 }
-await desktop.locator(".solution-facts").scrollIntoViewIfNeeded();
+const repeatReveal = desktop.locator("#services .section-heading");
+const upwardReset = await repeatReveal.evaluate((element) => ({
+  visible: element.classList.contains("is-visible"),
+  offset: element.style.getPropertyValue("--reveal-offset")
+}));
+if (upwardReset.visible || upwardReset.offset !== "-28px") {
+  issues.push("Off-screen reveal element did not reset after leaving the viewport.");
+}
+await repeatReveal.scrollIntoViewIfNeeded();
 await desktop.waitForTimeout(760);
+if (!(await repeatReveal.evaluate((element) => element.classList.contains("is-visible")))) {
+  issues.push("Reveal animation did not replay when the element re-entered from above.");
+}
 await desktop.evaluate(() => window.scrollTo(0, 0));
-await desktop.waitForTimeout(300);
-const hiddenReveals = await desktop.evaluate(() =>
-  [...document.querySelectorAll("[data-reveal]")]
-    .filter((element) => !element.classList.contains("is-visible"))
-    .map((element) => `${element.tagName.toLowerCase()}.${element.className}`)
-);
-if (hiddenReveals.length) issues.push(`Reveal elements did not activate: ${hiddenReveals.join(", ")}`);
+await desktop.waitForTimeout(760);
+if (!(await desktop.locator(".hero-copy").evaluate((element) => element.classList.contains("is-visible")))) {
+  issues.push("Hero reveal did not replay after scrolling back to the top.");
+}
+const downwardReset = await repeatReveal.evaluate((element) => ({
+  visible: element.classList.contains("is-visible"),
+  offset: element.style.getPropertyValue("--reveal-offset")
+}));
+if (downwardReset.visible || downwardReset.offset !== "28px") {
+  issues.push("Reveal element did not reset in the downward direction.");
+}
+await repeatReveal.scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(760);
+if (!(await repeatReveal.evaluate((element) => element.classList.contains("is-visible")))) {
+  issues.push("Reveal animation did not replay when the element re-entered from below.");
+}
+await desktop.evaluate(() => window.scrollTo(0, 0));
+await desktop.waitForTimeout(760);
 await desktop.screenshot({ path: join(output, "desktop-full-page.png"), fullPage: true });
 await desktop.locator("#contact").scrollIntoViewIfNeeded();
 await desktop.waitForTimeout(800);

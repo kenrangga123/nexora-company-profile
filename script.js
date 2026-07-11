@@ -95,15 +95,20 @@
     revealElements.forEach((element) => element.classList.add("is-visible"));
   } else {
     const revealObserver = new IntersectionObserver(
-      (entries, observer) => {
+      (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
+            return;
           }
+
+          const rootTop = entry.rootBounds?.top ?? 0;
+          const exitedAbove = entry.boundingClientRect.bottom <= rootTop;
+          entry.target.style.setProperty("--reveal-offset", exitedAbove ? "-28px" : "28px");
+          entry.target.classList.remove("is-visible");
         });
       },
-      { threshold: 0.12, rootMargin: "0px 0px -7%" }
+      { threshold: [0, 0.12], rootMargin: "-3% 0px -7%" }
     );
     revealElements.forEach((element) => revealObserver.observe(element));
   }

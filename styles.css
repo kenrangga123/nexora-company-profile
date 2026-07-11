@@ -378,14 +378,15 @@ svg {
 }
 
 [data-reveal] {
+  --reveal-offset: 28px;
   opacity: 0;
-  transform: translateY(28px);
+  transform: translate3d(0, var(--reveal-offset), 0);
   transition: opacity 700ms var(--ease), transform 700ms var(--ease);
 }
 
 [data-reveal].is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
 /* Header */

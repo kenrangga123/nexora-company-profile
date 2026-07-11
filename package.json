@@ -1,0 +1,15 @@
+{
+  "name": "nexora-company-profile",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive company profile website for ERP, software, AI, analytics, and digital solutions.",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "start": "node dev-server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

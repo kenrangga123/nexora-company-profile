@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { JWT } from "google-auth-library";
 
 const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024;
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT = 5;
+const PROVIDER_TIMEOUT_MS = 5_000;
+const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 const requestsByAddress = globalThis.__nexoraInquiryRateLimits || new Map();
 globalThis.__nexoraInquiryRateLimits = requestsByAddress;
 
@@ -121,19 +124,99 @@ const formatInquiryEmail = (record) => [
   `Submitted: ${record.submittedAt}`
 ].join("\n");
 
-const sendEmail = async (payload) => {
-  const response = await fetch("https://api.resend.com/emails", {
+const sendEmail = async (payload, { fetchImpl = fetch, idempotencyKey } = {}) => {
+  const response = await fetchImpl("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS)
   });
   if (!response.ok) throw new Error(`EMAIL_PROVIDER_${response.status}`);
 };
 
-const handleInquiry = async (request) => {
+const getCalendarConfig = () => ({
+  clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim() || "",
+  privateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replaceAll("\\n", "\n").trim() || "",
+  calendarId: process.env.GOOGLE_CALENDAR_ID?.trim() || "",
+  timeZone: process.env.GOOGLE_CALENDAR_TIME_ZONE?.trim() || "Asia/Jakarta"
+});
+
+const calendarIsConfigured = (config = getCalendarConfig()) =>
+  Boolean(config.clientEmail && config.privateKey && config.calendarId);
+
+const defaultGetAccessToken = async (config) => {
+  const client = new JWT({
+    email: config.clientEmail,
+    key: config.privateKey,
+    scopes: [CALENDAR_SCOPE]
+  });
+  const credentials = await client.getAccessToken();
+  if (!credentials.token) throw new Error("CALENDAR_TOKEN_MISSING");
+  return credentials.token;
+};
+
+export const buildCalendarEvent = (record) => {
+  const start = new Date(new Date(record.submittedAt).getTime() + 60 * 60 * 1_000);
+  const end = new Date(start.getTime() + 30 * 60 * 1_000);
+  const timeZone = getCalendarConfig().timeZone;
+  return {
+    summary: `[New inquiry] ${record.company} - ${record.service}`,
+    description: [
+      `Inquiry: ${record.id}`,
+      `Name: ${record.name}`,
+      `Company: ${record.company}`,
+      `Email: ${record.email}`,
+      `WhatsApp: ${record.whatsapp || "Not provided"}`,
+      `Service: ${record.service}`,
+      `Timeline: ${record.timeline || "Not provided"}`,
+      "",
+      "Project context:",
+      record.brief
+    ].join("\n"),
+    start: { dateTime: start.toISOString(), timeZone },
+    end: { dateTime: end.toISOString(), timeZone },
+    visibility: "private",
+    transparency: "opaque",
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: "email", minutes: 30 },
+        { method: "popup", minutes: 10 }
+      ]
+    },
+    extendedProperties: { private: { inquiryId: record.id } }
+  };
+};
+
+export const createCalendarFollowUp = async (
+  record,
+  { fetchImpl = fetch, getAccessToken = defaultGetAccessToken } = {}
+) => {
+  const config = getCalendarConfig();
+  if (!calendarIsConfigured(config)) return { configured: false, created: false };
+  const accessToken = await getAccessToken(config);
+  const response = await fetchImpl(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(config.calendarId)}/events`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(buildCalendarEvent(record)),
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS)
+    }
+  );
+  if (!response.ok) throw new Error(`CALENDAR_PROVIDER_${response.status}`);
+  const event = await response.json().catch(() => ({}));
+  return { configured: true, created: true, eventId: event.id || null };
+};
+
+export const handleInquiry = async (request, dependencies = {}) => {
   if (request.method !== "POST") return json({ message: "Method not allowed." }, 405);
 
   const requestOrigin = request.headers.get("origin");
@@ -179,16 +262,18 @@ const handleInquiry = async (request) => {
     text: formatInquiryEmail(savedRecord)
   };
   if (attachment) adminEmail.attachments = [attachment];
+  const sendEmailImpl = dependencies.sendEmail || sendEmail;
+  const createCalendarImpl = dependencies.createCalendarFollowUp || createCalendarFollowUp;
 
   try {
-    await sendEmail(adminEmail);
+    await sendEmailImpl(adminEmail, { idempotencyKey: `${savedRecord.id}-admin` });
   } catch (error) {
     console.error("Admin inquiry email failed:", error.message);
     return json({ message: "The inquiry could not be delivered. Please contact us directly by email." }, 502);
   }
 
-  try {
-    await sendEmail({
+  const [confirmationResult, calendarResult] = await Promise.allSettled([
+    sendEmailImpl({
       from: fromEmail,
       to: [savedRecord.email],
       subject: `We received your project inquiry (${savedRecord.id})`,
@@ -202,12 +287,28 @@ const handleInquiry = async (request) => {
         "",
         "Nexora Digital"
       ].join("\n")
-    });
-  } catch (error) {
-    console.error("Customer confirmation email failed:", error.message);
+    }, { idempotencyKey: `${savedRecord.id}-confirmation` }),
+    createCalendarImpl(savedRecord)
+  ]);
+
+  if (confirmationResult.status === "rejected") {
+    console.error(`Customer confirmation failed for ${savedRecord.id}:`, confirmationResult.reason?.message || "UNKNOWN");
+  }
+  if (calendarResult.status === "rejected") {
+    console.error(`Calendar follow-up failed for ${savedRecord.id}:`, calendarResult.reason?.message || "UNKNOWN");
   }
 
-  return json({ id: savedRecord.id, stored: true, notificationDelivered: true }, 201);
+  const calendarConfigured = calendarResult.status === "fulfilled"
+    ? calendarResult.value.configured
+    : calendarIsConfigured();
+  return json({
+    id: savedRecord.id,
+    stored: true,
+    notificationDelivered: true,
+    confirmationDelivered: confirmationResult.status === "fulfilled",
+    calendarConfigured,
+    calendarEventCreated: calendarResult.status === "fulfilled" && calendarResult.value.created
+  }, 201);
 };
 
 export default {

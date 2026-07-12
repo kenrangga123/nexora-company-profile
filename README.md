@@ -36,6 +36,24 @@ Configure these Production, Preview, and Development environment variables in Ve
 - `RESEND_API_KEY`
 - `INQUIRY_TO_EMAIL`
 - `INQUIRY_FROM_EMAIL`
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+- `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
+- `GOOGLE_CALENDAR_ID`
+- `GOOGLE_CALENDAR_TIME_ZONE=Asia/Jakarta`
+
+`RESEND_API_KEY` and `INQUIRY_TO_EMAIL` are required. Google Calendar configuration is optional at runtime: an incomplete Calendar configuration does not reject an inquiry after the admin email has been delivered.
+
+### Gmail and Google Calendar alerts
+
+1. Create a Resend API key and set `INQUIRY_TO_EMAIL` to the Gmail inbox that should receive inquiry alerts.
+2. Use a verified sending domain for `INQUIRY_FROM_EMAIL` when customer confirmation emails must reach addresses beyond the Resend account owner.
+3. In Google Cloud, enable the Google Calendar API and create a service account with a JSON key.
+4. In Google Calendar, create a dedicated calendar named `Nexora Inquiries`.
+5. Share only that calendar with the service account email using the `Make changes to events` permission.
+6. Put the service account email, private key, and dedicated calendar ID into the Vercel variables above. When entering the private key as one line, preserve line breaks as literal `\n` sequences.
+7. Add each secret directly through Vercel or `.env.local`; never commit the JSON key or paste it into source files.
+
+Each accepted inquiry sends the admin email first. It then sends the customer confirmation and creates a private 30-minute Calendar follow-up beginning one hour after submission. The Calendar event uses an email reminder 30 minutes before and a popup reminder 10 minutes before. Calendar or customer-confirmation failures are logged as best-effort failures and do not undo a delivered admin inquiry.
 
 ## Language
 
@@ -47,13 +65,15 @@ The Vercel inquiry function validates requests and attachments, rate-limits repe
 
 The form validates in the browser and again on the server. Accepted inquiries are stored outside the public file allowlist in `data/inquiries.ndjson`. Uploaded PDF, DOC, and DOCX files are limited to 2 MB and stored in `data/uploads/`.
 
-Email delivery is optional. Copy `.env.example` values into your deployment environment and configure:
+Copy `.env.example` values into your deployment environment and configure:
 
 - `RESEND_API_KEY`
 - `INQUIRY_TO_EMAIL`
 - `INQUIRY_FROM_EMAIL`
 
 When configured, the server sends the inquiry to the company inbox and a confirmation to the customer. Without email credentials, the inquiry is still stored locally and the API reports that email was not delivered.
+
+The Vercel function requires admin email delivery before accepting an inquiry. Its success response also reports `confirmationDelivered`, `calendarConfigured`, and `calendarEventCreated`, allowing provider status to be inspected without exposing credentials.
 
 ## Checks
 

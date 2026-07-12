@@ -11,7 +11,7 @@ test("portfolio contains the four working prototypes and expected gallery counts
   assert.deepEqual(Object.keys(caseStudies), ["erp", "rag", "faceswap", "cctv"]);
   assert.deepEqual(
     Object.fromEntries(Object.entries(caseStudies).map(([key, project]) => [key, project.images.length])),
-    { erp: 4, rag: 2, faceswap: 3, cctv: 1 }
+    { erp: 3, rag: 2, faceswap: 3, cctv: 1 }
   );
 
   assert.deepEqual(caseStudies.erp.categories, ["business-systems"]);

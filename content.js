@@ -119,11 +119,6 @@ export const caseStudies = {
         caption: "Point of sale with branch context, product availability, quick actions, and a focused checkout panel."
       },
       {
-        src: "/assets/work/erp-dashboard.webp",
-        alt: "Modular ERP owner dashboard showing stock health, operational totals, and recent activity",
-        caption: "Owner dashboard combining inventory health, daily signals, alerts, and recent operational activity."
-      },
-      {
         src: "/assets/work/erp-master-data.webp",
         alt: "Modular ERP product master data screen with filters, status summaries, and product records",
         caption: "Master data workspace with searchable records, category and status filters, and concise data health summaries."

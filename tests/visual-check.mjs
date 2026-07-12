@@ -62,8 +62,8 @@ await desktop.waitForTimeout(250);
 if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Automate")) issues.push("Solution explorer did not update.");
 await desktop.click('[data-open-case="erp"]');
 if (!(await desktop.locator("#case-dialog").evaluate((dialog) => dialog.open))) issues.push("Case study dialog did not open.");
-if ((await desktop.locator("[data-gallery-total]").textContent()) !== "4") issues.push("ERP gallery did not expose four images.");
-if ((await desktop.locator("[data-gallery-index]").count()) !== 4) issues.push("ERP gallery thumbnails did not match its image count.");
+if ((await desktop.locator("[data-gallery-total]").textContent()) !== "3") issues.push("ERP gallery did not expose three images.");
+if ((await desktop.locator("[data-gallery-index]").count()) !== 3) issues.push("ERP gallery thumbnails did not match its image count.");
 await desktop.click("[data-gallery-next]");
 if ((await desktop.locator("[data-gallery-current]").textContent()) !== "2") issues.push("Gallery next control did not advance.");
 await desktop.keyboard.press("ArrowRight");
@@ -72,7 +72,7 @@ await desktop.locator("[data-gallery-swipe]").evaluate((element) => {
   element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, clientX: 300 }));
   element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true, clientX: 100 }));
 });
-if ((await desktop.locator("[data-gallery-current]").textContent()) !== "4") issues.push("Gallery swipe did not advance.");
+if ((await desktop.locator("[data-gallery-current]").textContent()) !== "1") issues.push("Gallery swipe did not wrap to the cover.");
 await desktop.screenshot({ path: join(output, "desktop-case-dialog.png"), fullPage: false });
 await desktop.click("[data-close-case]");
 if (!(await desktop.locator('[data-open-case="erp"]').evaluate((element) => element === document.activeElement))) {

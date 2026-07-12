@@ -30,11 +30,10 @@ Only normalized WebP derivatives are stored in the public repository. The origin
 ### Modular ERP Operations Platform
 
 - `assets/work/erp-pos.webp`
-- `assets/work/erp-dashboard.webp`
 - `assets/work/erp-master-data.webp`
 - `assets/work/erp-purchasing.webp`
 
-These four captures show the working POS, owner dashboard, master-data workspace, and purchasing workflow prototype.
+These three captures show the working POS, master-data workspace, and purchasing workflow prototype.
 
 ### Private Company RAG Assistant
 

@@ -26,6 +26,7 @@ const installedBrowsers = [
 const executablePath = installedBrowsers.find(existsSync);
 const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
 const output = join(process.cwd(), "artifacts");
+const baseUrl = (process.env.BASE_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
 await mkdir(output, { recursive: true });
 
 const issues = [];
@@ -38,7 +39,7 @@ const attachDiagnostics = (page, label) => {
 
 const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
 attachDiagnostics(desktop, "desktop");
-await desktop.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
+await desktop.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
 await desktop.waitForTimeout(850);
 await desktop.screenshot({ path: join(output, "desktop-first-view.png"), fullPage: false });
 
@@ -156,7 +157,7 @@ for (const viewport of [
 ]) {
   const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1 });
   attachDiagnostics(page, viewport.name);
-  await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
   await page.waitForTimeout(850);
   const firstView = await page.evaluate(() => {
     const shell = document.querySelector(".header-inner").getBoundingClientRect();
@@ -198,7 +199,7 @@ for (const viewport of [
 
 const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 attachDiagnostics(mobile, "mobile");
-await mobile.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
+await mobile.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
 await mobile.waitForTimeout(850);
 await mobile.screenshot({ path: join(output, "mobile-first-view.png"), fullPage: false });
 const mobileInitialLayout = await mobile.evaluate(() => ({
@@ -242,7 +243,7 @@ await mobile.screenshot({ path: join(output, "mobile-contact.png"), fullPage: fa
 const legalPage = await browser.newPage({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
 attachDiagnostics(legalPage, "legal");
 for (const legalPath of ["privacy.html", "terms.html"]) {
-  await legalPage.goto(`http://127.0.0.1:4173/${legalPath}`, { waitUntil: "networkidle" });
+  await legalPage.goto(`${baseUrl}/${legalPath}`, { waitUntil: "networkidle" });
   if ((await legalPage.getAttribute("html", "lang")) !== "en") issues.push(`${legalPath} is not explicitly English.`);
   if (await legalPage.locator("[data-language-select]").count()) issues.push(`${legalPath} still exposes a language control.`);
   if ((await legalPage.title()).includes("ERP, Custom Software")) issues.push(`${legalPath} used homepage metadata.`);

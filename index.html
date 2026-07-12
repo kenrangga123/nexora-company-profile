@@ -83,10 +83,10 @@
               },
               {
                 "@type": "Question",
-                "name": "Do you support businesses outside Surabaya?",
+                "name": "Can you integrate with our existing systems?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. Discovery, delivery, training, and support can be handled remotely across Indonesia, with on-site sessions arranged when they add value."
+                  "text": "Yes. We assess APIs, databases, data ownership, synchronization needs, and security constraints before defining the integration approach."
                 }
               },
               {
@@ -115,13 +115,11 @@
         </a>
 
         <nav class="desktop-nav" aria-label="Primary navigation">
-          <a class="nav-link is-active" href="#home">Home</a>
           <a class="nav-link" href="#services">Services</a>
           <a class="nav-link" href="#work">Prototype Work</a>
           <a class="nav-link" href="#solutions">Solutions</a>
           <a class="nav-link" href="#process">Process</a>
           <a class="nav-link" href="#about">About</a>
-          <a class="nav-link" href="#contact">Contact</a>
         </nav>
 
         <div class="header-actions">
@@ -145,13 +143,12 @@
 
       <div class="mobile-menu" id="mobile-menu" data-mobile-menu aria-hidden="true">
         <nav aria-label="Mobile navigation">
-          <a href="#home">Home</a>
           <a href="#services">Services</a>
           <a href="#work">Prototype Work</a>
           <a href="#solutions">Solutions</a>
           <a href="#process">Process</a>
           <a href="#about">About us</a>
-          <a href="#contact">Contact</a>
+          <a class="mobile-menu-cta" href="#contact">Request consultation</a>
         </nav>
         <p>ERP, software, AI, and digital platforms built around your operation.</p>
       </div>
@@ -184,13 +181,6 @@
               the way your people actually work.
             </p>
 
-            <div class="hero-tags" aria-label="Core services">
-              <span>ERP systems</span>
-              <span>Custom software</span>
-              <span>AI solutions</span>
-              <span>Digital platforms</span>
-            </div>
-
             <div class="hero-actions">
               <a class="button button-primary" href="#contact">
                 <span>Start a conversation</span>
@@ -209,40 +199,6 @@
             </div>
           </div>
 
-          <button class="hero-pulse" type="button" data-hero-pulse aria-label="Pause hero visual motion">
-            <span class="pulse-visual" aria-hidden="true"><span></span></span>
-            <span class="hero-pulse-copy">
-              <strong>Connected operations</strong>
-              <small>One view across the business</small>
-            </span>
-            <i data-lucide="pause" aria-hidden="true"></i>
-          </button>
-        </div>
-
-        <a class="scroll-cue" href="#client-priorities" aria-label="Scroll to key client priorities">
-          <span>Explore</span>
-          <i data-lucide="arrow-down" aria-hidden="true"></i>
-        </a>
-      </section>
-
-      <section class="priority-band" id="client-priorities" aria-label="What clients can expect">
-        <div class="shell priority-grid">
-          <div class="priority-item">
-            <span>01</span>
-            <div><strong>Business-first discovery</strong><small>Your process comes before the feature list.</small></div>
-          </div>
-          <div class="priority-item">
-            <span>02</span>
-            <div><strong>Clear project scope</strong><small>Visible decisions, milestones, and ownership.</small></div>
-          </div>
-          <div class="priority-item">
-            <span>03</span>
-            <div><strong>Systems built to scale</strong><small>Designed for more users, branches, and workflows.</small></div>
-          </div>
-          <div class="priority-item">
-            <span>04</span>
-            <div><strong>Support beyond launch</strong><small>Training, monitoring, and continuous improvement.</small></div>
-          </div>
         </div>
       </section>
 
@@ -251,82 +207,40 @@
           <div class="section-heading heading-split" data-reveal>
             <div>
               <p class="eyebrow">What we build</p>
-              <h2>One partner for the systems behind your growth.</h2>
+              <h2>Three focused ways to improve how work moves.</h2>
             </div>
             <p>
-              From the operational core to the customer-facing experience, every solution
-              is designed to share data, reduce friction, and support better decisions.
+              Choose the area closest to your current pressure point. Each can start independently
+              and connect as your operation grows.
             </p>
           </div>
 
-          <div class="service-grid">
-            <article class="service-card service-card-wide" data-tilt data-reveal>
-              <div class="service-icon"><i data-lucide="boxes" aria-hidden="true"></i></div>
-              <p class="card-kicker">Operational core</p>
-              <h3>ERP Development</h3>
-              <p>
-                A connected system for sales, purchasing, inventory, finance, production,
-                CRM, users, reporting, and multi-branch control.
-              </p>
-              <ul class="service-points">
-                <li>Custom modules and approvals</li>
-                <li>Real-time management visibility</li>
-                <li>Role-based access and audit trails</li>
+          <div class="service-explorer" data-reveal>
+            <div class="service-tabs" role="tablist" aria-label="Service categories">
+              <button class="service-tab is-active" type="button" role="tab" aria-selected="true" data-service-category="businessSystems">
+                <span>01</span><i data-lucide="boxes" aria-hidden="true"></i><strong>Business Systems</strong>
+              </button>
+              <button class="service-tab" type="button" role="tab" aria-selected="false" data-service-category="customPlatforms">
+                <span>02</span><i data-lucide="panels-top-left" aria-hidden="true"></i><strong>Custom Platforms</strong>
+              </button>
+              <button class="service-tab" type="button" role="tab" aria-selected="false" data-service-category="appliedAi">
+                <span>03</span><i data-lucide="brain-circuit" aria-hidden="true"></i><strong>Applied AI</strong>
+              </button>
+            </div>
+
+            <div class="service-stage" data-service-stage aria-live="polite">
+              <p class="card-kicker" data-service-kicker>Connected operations</p>
+              <h3 data-service-title>Run the business from one reliable operational core.</h3>
+              <p data-service-description>Connect daily transactions, management visibility, and the systems that keep teams aligned.</p>
+              <ul class="service-offerings" data-service-offerings>
+                <li><i data-lucide="check" aria-hidden="true"></i><span>ERP Development</span></li>
+                <li><i data-lucide="check" aria-hidden="true"></i><span>Dashboard and Analytics</span></li>
+                <li><i data-lucide="check" aria-hidden="true"></i><span>System Integration</span></li>
               </ul>
-              <a href="#contact" data-service-pick="ERP Development">
-                <span>Discuss your ERP</span><i data-lucide="arrow-right" aria-hidden="true"></i>
+              <a class="text-link" href="#contact" data-service-cta data-service-pick="ERP Development">
+                <span>Discuss your business system</span><i data-lucide="arrow-right" aria-hidden="true"></i>
               </a>
-            </article>
-
-            <article class="service-card" data-tilt data-reveal>
-              <div class="service-icon service-icon-coral"><i data-lucide="code-2" aria-hidden="true"></i></div>
-              <p class="card-kicker">Built for your workflow</p>
-              <h3>Custom Software</h3>
-              <p>Operational tools, internal platforms, portals, and workflow systems without off-the-shelf constraints.</p>
-              <a href="#contact" data-service-pick="Custom Software Development">
-                <span>Explore custom software</span><i data-lucide="arrow-right" aria-hidden="true"></i>
-              </a>
-            </article>
-
-            <article class="service-card" data-tilt data-reveal>
-              <div class="service-icon service-icon-amber"><i data-lucide="brain-circuit" aria-hidden="true"></i></div>
-              <p class="card-kicker">Practical intelligence</p>
-              <h3>AI Solutions</h3>
-              <p>Computer vision, intelligent automation, assistants, and machine learning tied to a measurable business use.</p>
-              <a href="#contact" data-service-pick="Artificial Intelligence">
-                <span>Find an AI use case</span><i data-lucide="arrow-right" aria-hidden="true"></i>
-              </a>
-            </article>
-
-            <article class="service-card" data-tilt data-reveal>
-              <div class="service-icon"><i data-lucide="layout-dashboard" aria-hidden="true"></i></div>
-              <p class="card-kicker">Decisions at a glance</p>
-              <h3>Data &amp; Dashboards</h3>
-              <p>Sales, inventory, finance, and operational intelligence shaped for the people who need to act on it.</p>
-              <a href="#contact" data-service-pick="Dashboard and Analytics">
-                <span>Plan your dashboard</span><i data-lucide="arrow-right" aria-hidden="true"></i>
-              </a>
-            </article>
-
-            <article class="service-card" data-tilt data-reveal>
-              <div class="service-icon service-icon-coral"><i data-lucide="panels-top-left" aria-hidden="true"></i></div>
-              <p class="card-kicker">Customer-facing</p>
-              <h3>Web Platforms</h3>
-              <p>Company profiles, booking flows, customer portals, internal websites, and responsive web applications.</p>
-              <a href="#contact" data-service-pick="Website Development">
-                <span>Build a web platform</span><i data-lucide="arrow-right" aria-hidden="true"></i>
-              </a>
-            </article>
-
-            <article class="service-card service-card-dark" data-tilt data-reveal>
-              <div class="service-icon"><i data-lucide="waypoints" aria-hidden="true"></i></div>
-              <p class="card-kicker">Everything connected</p>
-              <h3>System Integration</h3>
-              <p>APIs, databases, third-party services, and internal systems synchronized into one reliable flow of information.</p>
-              <a href="#contact" data-service-pick="System Integration">
-                <span>Connect your systems</span><i data-lucide="arrow-right" aria-hidden="true"></i>
-              </a>
-            </article>
+            </div>
           </div>
         </div>
       </section>
@@ -369,7 +283,6 @@
                   <div class="project-meta"><span>Working prototype</span><span>Business systems</span></div>
                   <h3>Modular ERP Operations Platform</h3>
                   <p>Connected master data, POS, inventory, purchasing, production, CRM, HR, and accounting workflows.</p>
-                  <div class="project-result"><strong>Demonstrates</strong><span>One modular workspace for daily operations.</span></div>
                   <span class="project-view-count"><i data-lucide="images" aria-hidden="true"></i>3 interface views</span>
                 </div>
               </button>
@@ -392,7 +305,6 @@
                   <div class="project-meta"><span>Working prototype</span><span>Generative AI</span></div>
                   <h3>Private Company RAG Assistant</h3>
                   <p>Permission-aware company knowledge with grounded answers, citations, source management, and audit-ready context.</p>
-                  <div class="project-result"><strong>Demonstrates</strong><span>Traceable answers from approved company sources.</span></div>
                   <span class="project-view-count"><i data-lucide="images" aria-hidden="true"></i>2 interface views</span>
                 </div>
               </button>
@@ -415,7 +327,6 @@
                   <div class="project-meta"><span>Working prototype</span><span>Generative AI</span><span>Computer vision</span></div>
                   <h3>Hero Booth AI Transformation</h3>
                   <p>A guided event flow that captures a guest, applies a hero transformation, and prepares a private result.</p>
-                  <div class="project-result"><strong>Demonstrates</strong><span>A complete experience from camera to delivery.</span></div>
                   <span class="project-view-count"><i data-lucide="images" aria-hidden="true"></i>3 interface views</span>
                 </div>
               </button>
@@ -438,7 +349,6 @@
                   <div class="project-meta"><span>Working prototype</span><span>Computer vision</span></div>
                   <h3>Motion-Triggered CCTV Dashboard</h3>
                   <p>YOLO-based live detection, motion-triggered recording, session health, and an organized clip history.</p>
-                  <div class="project-result"><strong>Demonstrates</strong><span>Automatic visual evidence from live camera events.</span></div>
                   <span class="project-view-count"><i data-lucide="image" aria-hidden="true"></i>1 interface view</span>
                 </div>
               </button>
@@ -451,8 +361,8 @@
         <div class="shell">
           <div class="section-heading solutions-heading" data-reveal>
             <p class="eyebrow eyebrow-dark">Business outcomes</p>
-            <h2>Start with the operational problem, not the technology.</h2>
-            <p>Choose a priority to see how we turn everyday friction into a connected digital workflow.</p>
+            <h2>Solve the operational problem first.</h2>
+            <p>Explore four ways connected systems can improve daily work.</p>
           </div>
 
           <div class="solution-tabs" role="tablist" aria-label="Business solution priorities" data-reveal>
@@ -510,11 +420,6 @@
             </div>
           </div>
 
-          <div class="solution-facts" data-reveal>
-            <div><strong><span data-counter="6">0</span></strong><small>connected solution areas</small></div>
-            <div><strong><span data-counter="8">0</span></strong><small>clear delivery stages</small></div>
-            <div><strong><span data-counter="1">0</span></strong><small>accountable technology partner</small></div>
-          </div>
         </div>
       </section>
 
@@ -523,7 +428,7 @@
           <div class="section-heading heading-split" data-reveal>
             <div>
               <p class="eyebrow">How we work</p>
-              <h2>A visible process from first question to long-term support.</h2>
+              <h2>Four clear phases from discovery to improvement.</h2>
             </div>
             <p>Every stage produces a concrete output, so your team always knows what is being decided and what comes next.</p>
           </div>
@@ -531,42 +436,30 @@
           <div class="process-layout" data-reveal>
             <div class="process-steps" role="tablist" aria-label="Development process">
               <button class="process-step is-active" type="button" role="tab" aria-selected="true" data-process="0">
-                <span>01</span><i data-lucide="messages-square" aria-hidden="true"></i><strong>Consult</strong>
+                <span>01</span><i data-lucide="search-check" aria-hidden="true"></i><strong>Discover</strong>
               </button>
               <button class="process-step" type="button" role="tab" aria-selected="false" data-process="1">
-                <span>02</span><i data-lucide="search-check" aria-hidden="true"></i><strong>Analyze</strong>
+                <span>02</span><i data-lucide="pen-tool" aria-hidden="true"></i><strong>Define</strong>
               </button>
               <button class="process-step" type="button" role="tab" aria-selected="false" data-process="2">
-                <span>03</span><i data-lucide="map" aria-hidden="true"></i><strong>Plan</strong>
+                <span>03</span><i data-lucide="braces" aria-hidden="true"></i><strong>Build</strong>
               </button>
               <button class="process-step" type="button" role="tab" aria-selected="false" data-process="3">
-                <span>04</span><i data-lucide="pen-tool" aria-hidden="true"></i><strong>Design</strong>
-              </button>
-              <button class="process-step" type="button" role="tab" aria-selected="false" data-process="4">
-                <span>05</span><i data-lucide="braces" aria-hidden="true"></i><strong>Build</strong>
-              </button>
-              <button class="process-step" type="button" role="tab" aria-selected="false" data-process="5">
-                <span>06</span><i data-lucide="badge-check" aria-hidden="true"></i><strong>Test</strong>
-              </button>
-              <button class="process-step" type="button" role="tab" aria-selected="false" data-process="6">
-                <span>07</span><i data-lucide="rocket" aria-hidden="true"></i><strong>Launch</strong>
-              </button>
-              <button class="process-step" type="button" role="tab" aria-selected="false" data-process="7">
-                <span>08</span><i data-lucide="life-buoy" aria-hidden="true"></i><strong>Support</strong>
+                <span>04</span><i data-lucide="rocket" aria-hidden="true"></i><strong>Launch &amp; improve</strong>
               </button>
             </div>
 
             <div class="process-detail" aria-live="polite">
               <div class="process-detail-index" data-process-index>01</div>
               <div>
-                <p class="card-kicker" data-process-kicker>Business consultation</p>
-                <h3 data-process-title>Understand the goal before defining the system.</h3>
+                <p class="card-kicker" data-process-kicker>Consultation and analysis</p>
+                <h3 data-process-title>Understand the operation before defining the system.</h3>
                 <p data-process-description>
-                  We align on the business context, current pressure points, stakeholders, and the result the project should create.
+                  We align on the goal, then map the people, data, handoffs, exceptions, and systems involved today.
                 </p>
                 <div class="process-output">
                   <span>Stage output</span>
-                  <strong data-process-output>Shared objectives and discovery brief</strong>
+                  <strong data-process-output>Discovery brief and current-state map</strong>
                 </div>
               </div>
             </div>
@@ -578,7 +471,6 @@
         <div class="shell industry-intro" data-reveal>
           <p class="eyebrow">Industry focus</p>
           <h2 id="industries-title">Built for teams with moving parts.</h2>
-          <p>Especially where branches, inventory, production, people, and customer data need to work together.</p>
         </div>
         <div class="industry-marquee" aria-label="Industries we serve">
           <div class="industry-track">
@@ -614,8 +506,7 @@
           <div class="about-values" data-reveal>
             <article><span>01</span><div><h3>Business clarity</h3><p>We ask what should improve before deciding what should be built.</p></div></article>
             <article><span>02</span><div><h3>Useful innovation</h3><p>Modern technology earns its place by making real work better.</p></div></article>
-            <article><span>03</span><div><h3>Visible collaboration</h3><p>Decisions, progress, and trade-offs stay clear throughout delivery.</p></div></article>
-            <article><span>04</span><div><h3>Reliable ownership</h3><p>We stay accountable from discovery through support and improvement.</p></div></article>
+            <article><span>03</span><div><h3>Reliable ownership</h3><p>Decisions and progress stay clear from discovery through support.</p></div></article>
           </div>
         </div>
       </section>
@@ -660,29 +551,11 @@
             <article class="accordion-item">
               <h3>
                 <button type="button" aria-expanded="false">
-                  <span>Do you support businesses outside Surabaya?</span>
-                  <i data-lucide="plus" aria-hidden="true"></i>
-                </button>
-              </h3>
-              <div class="accordion-panel" hidden><p>Yes. Discovery, delivery, training, and support can be handled remotely across Indonesia, with on-site sessions arranged when they add value.</p></div>
-            </article>
-            <article class="accordion-item">
-              <h3>
-                <button type="button" aria-expanded="false">
                   <span>Is maintenance available after launch?</span>
                   <i data-lucide="plus" aria-hidden="true"></i>
                 </button>
               </h3>
               <div class="accordion-panel" hidden><p>Yes. The delivery plan can include monitoring, issue resolution, improvements, and an agreed support schedule after deployment.</p></div>
-            </article>
-            <article class="accordion-item">
-              <h3>
-                <button type="button" aria-expanded="false">
-                  <span>How do we request a proposal?</span>
-                  <i data-lucide="plus" aria-hidden="true"></i>
-                </button>
-              </h3>
-              <div class="accordion-panel" hidden><p>Share your context through the inquiry form. We will review it, arrange a discovery call, and define the information needed for a responsible proposal.</p></div>
             </article>
           </div>
         </div>
@@ -692,16 +565,14 @@
         <div class="shell contact-grid">
           <div class="contact-copy" data-reveal>
             <p class="eyebrow eyebrow-dark">Start a project</p>
-            <h2>Bring us the bottleneck, the ambition, or the rough idea.</h2>
+            <h2>Tell us what needs to work better.</h2>
             <p>
-              Tell us what is happening in the business today and what needs to be different.
-              We will help shape the right first step.
+              Share the current pressure point. We will help shape a practical first step.
             </p>
 
             <div class="contact-expectations">
               <div><i data-lucide="clock-3" aria-hidden="true"></i><span><strong>Thoughtful response</strong><small>Your inquiry is reviewed in context, not auto-qualified.</small></span></div>
               <div><i data-lucide="shield-check" aria-hidden="true"></i><span><strong>Confidential by default</strong><small>Share only what you are comfortable discussing initially.</small></span></div>
-              <div><i data-lucide="route" aria-hidden="true"></i><span><strong>A practical next step</strong><small>Discovery call, system audit, or scoped proposal.</small></span></div>
             </div>
 
             <div class="direct-contact">

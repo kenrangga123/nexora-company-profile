@@ -1,6 +1,7 @@
 import {
   caseStudies as portfolioCaseStudies,
   processData as processContent,
+  serviceData as serviceContent,
   solutionData as solutionContent,
   uiText
 } from "./content.js";
@@ -156,12 +157,9 @@ const t = (source, parameters = {}) =>
 
   const hero = $(".hero");
   const heroMedia = $(".hero-media");
-  const heroPulseButton = $("[data-hero-pulse]");
-  let heroPaused = false;
-
   if (!reduceMotion) {
     hero?.addEventListener("pointermove", (event) => {
-      if (heroPaused || event.pointerType === "touch") return;
+      if (event.pointerType === "touch") return;
       const bounds = hero.getBoundingClientRect();
       const x = (event.clientX - bounds.left) / bounds.width - 0.5;
       const y = (event.clientY - bounds.top) / bounds.height - 0.5;
@@ -172,15 +170,6 @@ const t = (source, parameters = {}) =>
       heroMedia.style.transform = "";
     });
   }
-
-  heroPulseButton?.addEventListener("click", () => {
-    heroPaused = !heroPaused;
-    hero.classList.toggle("is-paused", heroPaused);
-    heroPulseButton.setAttribute("aria-label", t(heroPaused ? uiText.resumeHeroMotion : uiText.pauseHeroMotion));
-    heroPulseButton.querySelector("svg")?.remove();
-    heroPulseButton.insertAdjacentHTML("beforeend", `<i data-lucide="${heroPaused ? "play" : "pause"}" aria-hidden="true"></i>`);
-    renderIcons();
-  });
 
   if (!reduceMotion && window.matchMedia("(pointer: fine)").matches) {
     $$('[data-tilt]').forEach((card) => {
@@ -195,6 +184,48 @@ const t = (source, parameters = {}) =>
       });
     });
   }
+
+  const serviceStage = $("[data-service-stage]");
+  const renderServiceOfferings = (items) => {
+    const fragment = document.createDocumentFragment();
+    items.forEach((label) => {
+      const item = document.createElement("li");
+      const icon = document.createElement("i");
+      const text = document.createElement("span");
+      icon.dataset.lucide = "check";
+      icon.setAttribute("aria-hidden", "true");
+      text.textContent = t(label);
+      item.append(icon, text);
+      fragment.append(item);
+    });
+    $("[data-service-offerings]")?.replaceChildren(fragment);
+  };
+
+  const setService = (key, button) => {
+    const data = serviceContent[key];
+    if (!data || button.classList.contains("is-active")) return;
+    $$('[data-service-category]').forEach((tab) => {
+      const active = tab === button;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+    serviceStage.classList.add("is-changing");
+    window.setTimeout(() => {
+      $("[data-service-kicker]").textContent = t(data.kicker);
+      $("[data-service-title]").textContent = t(data.title);
+      $("[data-service-description]").textContent = t(data.description);
+      const cta = $("[data-service-cta]");
+      cta.dataset.servicePick = data.service;
+      $("span", cta).textContent = t(data.cta);
+      renderServiceOfferings(data.offerings);
+      renderIcons();
+      serviceStage.classList.remove("is-changing");
+    }, reduceMotion ? 0 : 160);
+  };
+
+  $$('[data-service-category]').forEach((button) => {
+    button.addEventListener("click", () => setService(button.dataset.serviceCategory, button));
+  });
 
   const solutionStage = $("[data-solution-stage]");
   const renderWorkflowItems = (container, items) => {
@@ -238,41 +269,6 @@ const t = (source, parameters = {}) =>
   $$("[data-solution]").forEach((button) => {
     button.addEventListener("click", () => setSolution(button.dataset.solution, button));
   });
-
-  const counterElements = $$('[data-counter]');
-  const runCounter = (element) => {
-    const target = Number(element.dataset.counter);
-    if (reduceMotion) {
-      element.textContent = String(target);
-      return;
-    }
-    const start = performance.now();
-    const duration = 760;
-    const tick = (now) => {
-      const progress = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      element.textContent = String(Math.round(target * eased));
-      if (progress < 1) window.requestAnimationFrame(tick);
-    };
-    window.requestAnimationFrame(tick);
-  };
-
-  if ("IntersectionObserver" in window) {
-    const counterObserver = new IntersectionObserver(
-      (entries, observer) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            runCounter(entry.target);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.7 }
-    );
-    counterElements.forEach((element) => counterObserver.observe(element));
-  } else {
-    counterElements.forEach(runCounter);
-  }
 
   const caseDialog = $("#case-dialog");
   const caseImage = $("[data-case-image]");
@@ -512,6 +508,7 @@ const t = (source, parameters = {}) =>
   };
 
   bindArrowNavigation("[data-solution]");
+  bindArrowNavigation("[data-service-category]");
   bindArrowNavigation("[data-filter]");
   bindArrowNavigation("[data-process]");
 

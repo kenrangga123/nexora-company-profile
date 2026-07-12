@@ -3,8 +3,6 @@ export const uiText = {
   closeMenu: "Close navigation menu",
   openMenuTooltip: "Open menu",
   closeMenuTooltip: "Close menu",
-  pauseHeroMotion: "Pause hero visual motion",
-  resumeHeroMotion: "Resume hero visual motion",
   previousImage: "Previous project image",
   nextImage: "Next project image",
   galleryLabel: "Project image gallery",
@@ -29,6 +27,33 @@ export const uiText = {
   inquiryReceived: "Your inquiry has been received.",
   draftSaved: "Your draft is still saved in this browser.",
   received: "received"
+};
+
+export const serviceData = {
+  businessSystems: {
+    kicker: "Connected operations",
+    title: "Run the business from one reliable operational core.",
+    description: "Connect daily transactions, management visibility, and the systems that keep teams aligned.",
+    offerings: ["ERP Development", "Dashboard and Analytics", "System Integration"],
+    service: "ERP Development",
+    cta: "Discuss your business system"
+  },
+  customPlatforms: {
+    kicker: "Built around your workflow",
+    title: "Turn a specific process into software people can use clearly.",
+    description: "Create focused internal tools, customer portals, and responsive platforms without off-the-shelf constraints.",
+    offerings: ["Custom Software Development", "Website Development"],
+    service: "Custom Software Development",
+    cta: "Explore a custom platform"
+  },
+  appliedAi: {
+    kicker: "Practical intelligence",
+    title: "Apply AI where it makes real work faster or more visible.",
+    description: "Use grounded assistants, computer vision, and intelligent automation for a defined operational need.",
+    offerings: ["Artificial Intelligence"],
+    service: "Artificial Intelligence",
+    cta: "Find an AI use case"
+  }
 };
 
 export const solutionData = {
@@ -205,58 +230,30 @@ export const caseStudies = {
 export const processData = [
   {
     index: "01",
-    kicker: "Business consultation",
-    title: "Understand the goal before defining the system.",
-    description: "We align on the business context, current pressure points, stakeholders, and the result the project should create.",
-    output: "Shared objectives and discovery brief"
+    kicker: "Consultation and analysis",
+    title: "Understand the operation before defining the system.",
+    description: "We align on the goal, then map the people, data, handoffs, exceptions, and systems involved today.",
+    output: "Discovery brief and current-state map"
   },
   {
     index: "02",
-    kicker: "Process analysis",
-    title: "See how the work really moves today.",
-    description: "We map people, data, handoffs, exceptions, approvals, and the systems already involved in the operation.",
-    output: "Current-state process map and opportunity list"
+    kicker: "Planning and design",
+    title: "Define a responsible plan and a clear user experience.",
+    description: "We shape scope, architecture, phases, integrations, key journeys, and interfaces around actual user roles.",
+    output: "Solution blueprint and validated interface flows"
   },
   {
     index: "03",
-    kicker: "System planning",
-    title: "Turn findings into a responsible delivery plan.",
-    description: "We define scope, architecture, phases, integrations, risks, and the decisions needed before development begins.",
-    output: "Solution blueprint and phased roadmap"
+    kicker: "Development and quality assurance",
+    title: "Build in visible increments and test real operating scenarios.",
+    description: "Working milestones are reviewed and verified for functionality, permissions, data integrity, integrations, and responsiveness.",
+    output: "Tested product increments and launch readiness"
   },
   {
     index: "04",
-    kicker: "UI and UX design",
-    title: "Make complex workflows feel clear to the people using them.",
-    description: "We design the information hierarchy, key journeys, interfaces, and responsive behavior around actual user roles.",
-    output: "Validated flows and interface design"
-  },
-  {
-    index: "05",
-    kicker: "Development",
-    title: "Build in visible, testable increments.",
-    description: "The solution is developed in structured milestones with working reviews, technical checks, and clear change control.",
-    output: "Working product increments and release notes"
-  },
-  {
-    index: "06",
-    kicker: "Quality assurance",
-    title: "Test the system against real operating scenarios.",
-    description: "We verify functionality, permissions, data integrity, responsiveness, integrations, and critical user journeys.",
-    output: "Acceptance results and launch readiness"
-  },
-  {
-    index: "07",
-    kicker: "Implementation",
-    title: "Launch with the people and data prepared.",
-    description: "Deployment, migration, user access, training, and handover are coordinated around a practical go-live plan.",
-    output: "Deployed system and trained users"
-  },
-  {
-    index: "08",
-    kicker: "Maintenance and support",
-    title: "Keep the system useful as the business changes.",
-    description: "We monitor, resolve issues, review improvement requests, and plan the next valuable iteration after launch.",
-    output: "Support rhythm and improvement backlog"
+    kicker: "Launch and continuous improvement",
+    title: "Go live with prepared users, then keep improving.",
+    description: "We coordinate deployment, access, training, and handover, then maintain a clear rhythm for support and valuable iterations.",
+    output: "Deployed system, trained users, and improvement backlog"
   }
 ];

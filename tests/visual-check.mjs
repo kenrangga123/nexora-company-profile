@@ -60,6 +60,15 @@ const desktopLayout = await desktop.evaluate(() => ({
 await desktop.click('[data-solution="automate"]');
 await desktop.waitForTimeout(250);
 if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Automate")) issues.push("Solution explorer did not update.");
+await desktop.click('[data-service-category="customPlatforms"]');
+await desktop.waitForTimeout(220);
+if (!(await desktop.locator("[data-service-title]").textContent()).includes("specific process")) issues.push("Service explorer did not update.");
+await desktop.locator("#services").screenshot({ path: join(output, "desktop-services.png") });
+await desktop.click("[data-service-cta]");
+if ((await desktop.inputValue('[name="service"]')) !== "Custom Software Development") issues.push("Service explorer did not prefill the inquiry form.");
+await desktop.locator("#work").scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(760);
+await desktop.locator("#work").screenshot({ path: join(output, "desktop-prototype-work.png") });
 await desktop.click('[data-open-case="erp"]');
 if (!(await desktop.locator("#case-dialog").evaluate((dialog) => dialog.open))) issues.push("Case study dialog did not open.");
 if ((await desktop.locator("[data-gallery-total]").textContent()) !== "3") issues.push("ERP gallery did not expose three images.");
@@ -82,9 +91,10 @@ await desktop.click('[data-open-case="cctv"]');
 if (await desktop.locator("[data-gallery-next]").isVisible()) issues.push("Single-image CCTV gallery still showed navigation.");
 if (await desktop.locator("[data-case-thumbnails]").isVisible()) issues.push("Single-image CCTV gallery still showed thumbnails.");
 await desktop.click("[data-close-case]");
-await desktop.click('[data-process="4"]');
+await desktop.click('[data-process="2"]');
 await desktop.waitForTimeout(220);
 if (!(await desktop.locator("[data-process-title]").textContent()).includes("Build")) issues.push("Process explorer did not update.");
+await desktop.locator("#process").screenshot({ path: join(output, "desktop-process.png") });
 
 const expectedFilterCounts = {
   "business-systems": 1,
@@ -226,6 +236,7 @@ const mobileMenuLayout = await mobile.locator("[data-mobile-menu]").evaluate((el
 if (mobileMenuLayout.background === "rgba(0, 0, 0, 0)" || mobileMenuLayout.opacity !== "1" || mobileMenuLayout.visibility !== "visible") {
   issues.push("Mobile menu did not render as an opaque visible panel.");
 }
+if (mobileMenuLayout.bottom < mobileInitialLayout.viewportHeight - 1) issues.push("Mobile menu did not cover the viewport below the header.");
 await mobile.screenshot({ path: join(output, "mobile-menu.png"), fullPage: false });
 await mobile.click('[data-mobile-menu] a[href="#services"]');
 await mobile.waitForTimeout(250);

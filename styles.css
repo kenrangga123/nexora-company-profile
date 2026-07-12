@@ -353,7 +353,7 @@ svg {
 [data-tooltip]::after {
   position: absolute;
   z-index: 20;
-  right: 0;
+  inset-inline-end: 0;
   bottom: calc(100% + 9px);
   width: max-content;
   max-width: 190px;
@@ -394,8 +394,7 @@ svg {
   position: fixed;
   z-index: 1000;
   top: 0;
-  right: 0;
-  left: 0;
+  inset-inline: 0;
   height: var(--header-height);
   border-bottom: 1px solid transparent;
   color: var(--surface);
@@ -505,16 +504,19 @@ svg {
   top: 100%;
   right: 0;
   left: 0;
+  max-height: calc(100svh - var(--header-height));
   visibility: hidden;
   padding: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: #07100c;
   opacity: 0;
+  overflow-y: auto;
   transform: translateY(-12px);
-  transition: opacity 200ms ease, transform 260ms var(--ease), visibility 200ms ease;
+  transition: transform 260ms var(--ease), visibility 200ms ease;
 }
 
 .mobile-menu.is-open {
+  z-index: 1;
   visibility: visible;
   opacity: 1;
   transform: translateY(0);
@@ -1288,10 +1290,12 @@ svg {
 .project-open {
   display: grid;
   width: 100%;
+  height: 100%;
+  grid-template-rows: auto 1fr;
   padding: 0;
   background: transparent;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 
 .project-card-featured .project-open {
@@ -1317,6 +1321,18 @@ svg {
   transition: transform 700ms var(--ease);
 }
 
+.project-media-light {
+  background: #eef2f3;
+}
+
+.project-media-dark {
+  background: #0d131d;
+}
+
+.project-media-cctv img {
+  object-position: center 18%;
+}
+
 .project-open:hover .project-media img {
   transform: scale(1.035);
 }
@@ -1324,7 +1340,7 @@ svg {
 .project-action {
   position: absolute;
   top: 16px;
-  right: 16px;
+  inset-inline-end: 16px;
   display: grid;
   width: 44px;
   height: 44px;
@@ -1367,7 +1383,7 @@ svg {
 }
 
 .project-meta span + span::before {
-  margin-right: 8px;
+  margin-inline-end: 8px;
   color: var(--line);
   content: "/";
 }
@@ -1401,6 +1417,17 @@ svg {
 .project-result span {
   font-size: 13px;
   font-weight: 700;
+}
+
+.project-view-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  color: var(--green-dark);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 /* Industry band */
@@ -2294,13 +2321,115 @@ svg {
   backdrop-filter: blur(10px);
 }
 
-.case-dialog figure {
-  aspect-ratio: 16 / 8.4;
-  overflow: hidden;
-  background: var(--ink);
+.case-gallery {
+  padding: 18px 18px 0;
+  background: #07100c;
 }
 
-.case-dialog figure img {
+.case-gallery-stage {
+  position: relative;
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: #0b1310;
+  touch-action: pan-y;
+  direction: ltr;
+}
+
+.case-gallery-stage figure {
+  display: grid;
+  width: 100%;
+  min-height: 360px;
+  max-height: min(66svh, 720px);
+  place-items: center;
+  overflow: hidden;
+}
+
+.case-gallery-stage figure img {
+  width: 100%;
+  height: 100%;
+  max-height: min(66svh, 720px);
+  object-fit: contain;
+}
+
+.case-gallery-button {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(4, 10, 7, 0.82);
+  color: var(--surface);
+  backdrop-filter: blur(10px);
+  transform: translateY(-50%);
+}
+
+.case-gallery-button:hover {
+  background: var(--green);
+  color: var(--ink);
+}
+
+.case-gallery-previous {
+  left: 14px;
+}
+
+.case-gallery-next {
+  right: 14px;
+}
+
+.case-gallery-info {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 12px;
+}
+
+.case-gallery-info p {
+  max-width: 760px;
+}
+
+.case-gallery-info > span {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.case-thumbnails {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  direction: ltr;
+}
+
+.case-thumbnail {
+  position: relative;
+  width: 94px;
+  height: 58px;
+  flex: 0 0 94px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: #111b16;
+  cursor: pointer;
+  opacity: 0.58;
+  transition: opacity 180ms ease, border-color 180ms ease, transform 180ms var(--ease);
+}
+
+.case-thumbnail:hover,
+.case-thumbnail.is-active {
+  border-color: var(--green-bright);
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.case-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2329,13 +2458,13 @@ svg {
   gap: 0;
   margin: 38px 0;
   border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
+  border-inline-start: 1px solid var(--line);
 }
 
 .case-columns > div {
   min-height: 170px;
   padding: 24px;
-  border-right: 1px solid var(--line);
+  border-inline-end: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
@@ -2374,7 +2503,7 @@ svg {
 .back-to-top {
   position: fixed;
   z-index: 900;
-  right: 24px;
+  inset-inline-end: 24px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -2427,7 +2556,7 @@ svg {
 .toast {
   position: fixed;
   z-index: 1200;
-  right: 24px;
+  inset-inline-end: 24px;
   bottom: 24px;
   max-width: min(390px, calc(100% - 48px));
   padding: 13px 16px;
@@ -2539,6 +2668,16 @@ svg {
 @media (min-width: 2400px) {
   .shell {
     width: min(calc(100% - 120px), 2280px);
+  }
+}
+
+@media (max-width: 1200px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: inline-grid;
   }
 }
 
@@ -3033,8 +3172,24 @@ svg {
     max-height: calc(100svh - 20px);
   }
 
-  .case-dialog figure {
-    aspect-ratio: 4 / 3;
+  .case-gallery {
+    padding: 10px 10px 0;
+  }
+
+  .case-gallery-stage,
+  .case-gallery-stage figure {
+    min-height: 240px;
+  }
+
+  .case-gallery-stage figure,
+  .case-gallery-stage figure img {
+    max-height: 54svh;
+  }
+
+  .case-gallery-button {
+    top: auto;
+    bottom: 12px;
+    transform: none;
   }
 
   .case-content {
@@ -3051,6 +3206,12 @@ svg {
 
   .case-columns > div {
     min-height: 0;
+  }
+
+  .case-thumbnail {
+    width: 82px;
+    height: 52px;
+    flex-basis: 82px;
   }
 
   .floating-contact {

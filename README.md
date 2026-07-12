@@ -37,6 +37,10 @@ Configure these Production, Preview, and Development environment variables in Ve
 - `INQUIRY_TO_EMAIL`
 - `INQUIRY_FROM_EMAIL`
 
+## Language
+
+The current release is English-only. It does not load locale bundles or call an external translation service at build time or in the browser.
+
 The Vercel inquiry function validates requests and attachments, rate-limits repeated submissions on warm instances, sends the admin notification first, and sends the customer confirmation as a best-effort follow-up. Unlike the local development server, it does not write inquiry data to the deployment filesystem.
 
 ## Inquiry workflow
@@ -68,7 +72,6 @@ The user did not provide final company details, so the following are intentional
 - Domain and canonical URL: `https://nexora.example`
 - Email: `hello@nexora.example`
 - Location: `Surabaya, Indonesia`
-- Portfolio scenarios and company claims
 - Privacy and terms text
 
 Update the matching values in `index.html`, `privacy.html`, `terms.html`, `robots.txt`, `sitemap.xml`, and `site.webmanifest`. Add approved client logos and verified testimonials only after permission is confirmed.

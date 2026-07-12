@@ -50,6 +50,8 @@ const desktopLayout = await desktop.evaluate(() => ({
   duplicateIds: [...document.querySelectorAll("[id]")]
     .map((element) => element.id)
     .filter((id, index, ids) => ids.indexOf(id) !== index),
+  languageControls: document.querySelectorAll("[data-language-select]").length,
+  language: document.documentElement.lang,
   heroBottom: document.querySelector(".hero").getBoundingClientRect().bottom,
   viewportHeight: window.innerHeight
 }));
@@ -59,11 +61,42 @@ await desktop.waitForTimeout(250);
 if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Automate")) issues.push("Solution explorer did not update.");
 await desktop.click('[data-open-case="erp"]');
 if (!(await desktop.locator("#case-dialog").evaluate((dialog) => dialog.open))) issues.push("Case study dialog did not open.");
+if ((await desktop.locator("[data-gallery-total]").textContent()) !== "4") issues.push("ERP gallery did not expose four images.");
+if ((await desktop.locator("[data-gallery-index]").count()) !== 4) issues.push("ERP gallery thumbnails did not match its image count.");
+await desktop.click("[data-gallery-next]");
+if ((await desktop.locator("[data-gallery-current]").textContent()) !== "2") issues.push("Gallery next control did not advance.");
+await desktop.keyboard.press("ArrowRight");
+if ((await desktop.locator("[data-gallery-current]").textContent()) !== "3") issues.push("Gallery keyboard control did not advance.");
+await desktop.locator("[data-gallery-swipe]").evaluate((element) => {
+  element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, clientX: 300 }));
+  element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true, clientX: 100 }));
+});
+if ((await desktop.locator("[data-gallery-current]").textContent()) !== "4") issues.push("Gallery swipe did not advance.");
 await desktop.screenshot({ path: join(output, "desktop-case-dialog.png"), fullPage: false });
+await desktop.click("[data-close-case]");
+if (!(await desktop.locator('[data-open-case="erp"]').evaluate((element) => element === document.activeElement))) {
+  issues.push("Case dialog did not restore focus to its originating card.");
+}
+await desktop.click('[data-open-case="cctv"]');
+if (await desktop.locator("[data-gallery-next]").isVisible()) issues.push("Single-image CCTV gallery still showed navigation.");
+if (await desktop.locator("[data-case-thumbnails]").isVisible()) issues.push("Single-image CCTV gallery still showed thumbnails.");
 await desktop.click("[data-close-case]");
 await desktop.click('[data-process="4"]');
 await desktop.waitForTimeout(220);
 if (!(await desktop.locator("[data-process-title]").textContent()).includes("Build")) issues.push("Process explorer did not update.");
+
+const expectedFilterCounts = {
+  "business-systems": 1,
+  "generative-ai": 2,
+  "computer-vision": 2,
+  all: 4
+};
+for (const [filter, expected] of Object.entries(expectedFilterCounts)) {
+  await desktop.click(`[data-filter="${filter}"]`);
+  const visibleProjects = await desktop.locator("[data-project]:not(.is-hidden)").count();
+  if (visibleProjects !== expected) issues.push(`${filter} filter showed ${visibleProjects} projects instead of ${expected}.`);
+}
+
 for (const section of ["services", "solutions", "work", "industries", "process", "about", "faq", "contact"]) {
   await desktop.locator(`#${section}`).scrollIntoViewIfNeeded();
   await desktop.waitForTimeout(760);
@@ -177,6 +210,21 @@ const mobileInitialLayout = await mobile.evaluate(() => ({
 }));
 await mobile.click("[data-menu-toggle]");
 if ((await mobile.getAttribute("[data-menu-toggle]", "aria-expanded")) !== "true") issues.push("Mobile menu did not open.");
+const mobileMenuLayout = await mobile.locator("[data-mobile-menu]").evaluate((element) => {
+  const style = getComputedStyle(element);
+  const bounds = element.getBoundingClientRect();
+  return {
+    background: style.backgroundColor,
+    opacity: style.opacity,
+    visibility: style.visibility,
+    zIndex: style.zIndex,
+    top: Math.round(bounds.top),
+    bottom: Math.round(bounds.bottom)
+  };
+});
+if (mobileMenuLayout.background === "rgba(0, 0, 0, 0)" || mobileMenuLayout.opacity !== "1" || mobileMenuLayout.visibility !== "visible") {
+  issues.push("Mobile menu did not render as an opaque visible panel.");
+}
 await mobile.screenshot({ path: join(output, "mobile-menu.png"), fullPage: false });
 await mobile.click('[data-mobile-menu] a[href="#services"]');
 await mobile.waitForTimeout(250);
@@ -190,12 +238,24 @@ await mobile.waitForTimeout(800);
 if (await mobile.locator(".floating-contact").isVisible()) issues.push("Mobile floating contact action remained visible over the inquiry section.");
 if (await mobile.locator("[data-back-top]").isVisible()) issues.push("Mobile back-to-top action remained visible over the inquiry section.");
 await mobile.screenshot({ path: join(output, "mobile-contact.png"), fullPage: false });
+
+const legalPage = await browser.newPage({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
+attachDiagnostics(legalPage, "legal");
+for (const legalPath of ["privacy.html", "terms.html"]) {
+  await legalPage.goto(`http://127.0.0.1:4173/${legalPath}`, { waitUntil: "networkidle" });
+  if ((await legalPage.getAttribute("html", "lang")) !== "en") issues.push(`${legalPath} is not explicitly English.`);
+  if (await legalPage.locator("[data-language-select]").count()) issues.push(`${legalPath} still exposes a language control.`);
+  if ((await legalPage.title()).includes("ERP, Custom Software")) issues.push(`${legalPath} used homepage metadata.`);
+}
+await legalPage.close();
 await browser.close();
 
 if (desktopLayout.scrollWidth > desktopLayout.clientWidth) issues.push(`Desktop horizontal overflow: ${desktopLayout.scrollWidth}/${desktopLayout.clientWidth}`);
 if (mobileInitialLayout.scrollWidth > mobileInitialLayout.clientWidth) issues.push(`Mobile horizontal overflow: ${mobileInitialLayout.scrollWidth}/${mobileInitialLayout.clientWidth}`);
 if (desktopLayout.missingAlt) issues.push(`Images missing alt text: ${desktopLayout.missingAlt}`);
 if (desktopLayout.duplicateIds.length) issues.push(`Duplicate IDs: ${desktopLayout.duplicateIds.join(", ")}`);
+if (desktopLayout.languageControls) issues.push("English-only release still exposes a language selector.");
+if (desktopLayout.language !== "en") issues.push(`Homepage language is ${desktopLayout.language} instead of en.`);
 
-console.log(JSON.stringify({ desktopLayout, responsiveLayouts, mobileLayout: mobileInitialLayout, issues }, null, 2));
+console.log(JSON.stringify({ desktopLayout, responsiveLayouts, mobileLayout: mobileInitialLayout, mobileMenuLayout, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

@@ -1,3 +1,16 @@
+import {
+  caseStudies as portfolioCaseStudies,
+  processData as processContent,
+  solutionData as solutionContent,
+  uiText
+} from "./content.js";
+
+const t = (source, parameters = {}) =>
+  Object.entries(parameters).reduce(
+    (result, [key, replacement]) => result.replaceAll(`{${key}}`, String(replacement)),
+    String(source || "")
+  );
+
 (() => {
   "use strict";
 
@@ -17,6 +30,16 @@
     }
   };
 
+  const setButtonContent = (button, label, icon) => {
+    const text = document.createElement("span");
+    const glyph = document.createElement("i");
+    text.textContent = t(label);
+    glyph.dataset.lucide = icon;
+    glyph.setAttribute("aria-hidden", "true");
+    button.replaceChildren(text, glyph);
+    renderIcons();
+  };
+
   renderIcons();
 
   const header = $("[data-header]");
@@ -30,7 +53,7 @@
 
   const showToast = (message, type = "info") => {
     window.clearTimeout(toastTimer);
-    toast.textContent = message;
+    toast.textContent = t(message);
     toast.classList.toggle("is-error", type === "error");
     toast.classList.add("is-visible");
     toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 4600);
@@ -42,8 +65,8 @@
     mobileMenu.classList.toggle("is-open", open);
     mobileMenu.setAttribute("aria-hidden", String(!open));
     menuButton.setAttribute("aria-expanded", String(open));
-    menuButton.setAttribute("aria-label", open ? "Close navigation menu" : "Open navigation menu");
-    menuButton.setAttribute("data-tooltip", open ? "Close menu" : "Open menu");
+    menuButton.setAttribute("aria-label", t(open ? uiText.closeMenu : uiText.openMenu));
+    menuButton.setAttribute("data-tooltip", t(open ? uiText.closeMenuTooltip : uiText.openMenuTooltip));
     menuButton.innerHTML = `<i data-lucide="${open ? "x" : "menu"}" aria-hidden="true"></i>`;
     renderIcons();
   };
@@ -153,7 +176,7 @@
   heroPulseButton?.addEventListener("click", () => {
     heroPaused = !heroPaused;
     hero.classList.toggle("is-paused", heroPaused);
-    heroPulseButton.setAttribute("aria-label", heroPaused ? "Resume hero visual motion" : "Pause hero visual motion");
+    heroPulseButton.setAttribute("aria-label", t(heroPaused ? uiText.resumeHeroMotion : uiText.pauseHeroMotion));
     heroPulseButton.querySelector("svg")?.remove();
     heroPulseButton.insertAdjacentHTML("beforeend", `<i data-lucide="${heroPaused ? "play" : "pause"}" aria-hidden="true"></i>`);
     renderIcons();
@@ -173,83 +196,24 @@
     });
   }
 
-  const solutionData = {
-    digitalize: {
-      number: "01 / 04",
-      kicker: "From manual to visible",
-      title: "Digitalize the work your team already does.",
-      description: "Replace disconnected forms, spreadsheets, and chat approvals with one clear workflow that records every decision.",
-      outcome: "A reliable digital trail from request to result.",
-      before: [
-        ["sheet", "Scattered spreadsheets"],
-        ["messages-square", "Approval in chat"],
-        ["file-clock", "Manual reporting"]
-      ],
-      after: [
-        ["database-zap", "Structured data capture"],
-        ["route", "Visible approval flow"],
-        ["chart-no-axes-combined", "Live operational view"]
-      ]
-    },
-    automate: {
-      number: "02 / 04",
-      kicker: "From repetitive to responsive",
-      title: "Automate the handoffs that slow everyone down.",
-      description: "Set rules for approvals, notifications, recurring reports, and routine data movement so the team can focus on exceptions.",
-      outcome: "Less follow-up work and faster movement between teams.",
-      before: [
-        ["alarm-clock", "Repeated reminders"],
-        ["copy", "Duplicate data entry"],
-        ["user-round-check", "Manual status checks"]
-      ],
-      after: [
-        ["bell-ring", "Triggered notifications"],
-        ["refresh-cw", "Automatic synchronization"],
-        ["list-checks", "Rule-based progression"]
-      ]
-    },
-    centralize: {
-      number: "03 / 04",
-      kicker: "From fragmented to aligned",
-      title: "Centralize the data leaders depend on.",
-      description: "Bring sales, inventory, finance, customers, production, and reporting into a shared operational source of truth.",
-      outcome: "One consistent picture of performance across the company.",
-      before: [
-        ["database", "Department data silos"],
-        ["file-question", "Conflicting reports"],
-        ["eye-off", "Delayed visibility"]
-      ],
-      after: [
-        ["combine", "Connected business data"],
-        ["badge-check", "Consistent definitions"],
-        ["gauge", "Current management view"]
-      ]
-    },
-    scale: {
-      number: "04 / 04",
-      kicker: "From one location to many",
-      title: "Scale operations without losing control.",
-      description: "Create repeatable branch workflows, shared standards, role-based access, and consolidated reporting as the organization grows.",
-      outcome: "Local flexibility with company-wide visibility and governance.",
-      before: [
-        ["git-fork", "Different branch processes"],
-        ["users", "Unclear access rights"],
-        ["files", "Separate branch reports"]
-      ],
-      after: [
-        ["network", "Shared operating model"],
-        ["shield-check", "Role-based control"],
-        ["chart-spline", "Consolidated performance"]
-      ]
-    }
+  const solutionStage = $("[data-solution-stage]");
+  const renderWorkflowItems = (container, items) => {
+    const fragment = document.createDocumentFragment();
+    items.forEach(([icon, label]) => {
+      const item = document.createElement("li");
+      const glyph = document.createElement("i");
+      const text = document.createElement("span");
+      glyph.dataset.lucide = icon;
+      glyph.setAttribute("aria-hidden", "true");
+      text.textContent = t(label);
+      item.append(glyph, text);
+      fragment.append(item);
+    });
+    container.replaceChildren(fragment);
   };
 
-  const solutionStage = $("[data-solution-stage]");
-  const makeWorkflowItems = (items) =>
-    items.map(([icon, text]) => `<li><i data-lucide="${icon}" aria-hidden="true"></i><span>${text}</span></li>`).join("");
-
   const setSolution = (key, button) => {
-    const data = solutionData[key];
+    const data = solutionContent[key];
     if (!data || button.classList.contains("is-active")) return;
     $$("[data-solution]").forEach((tab) => {
       const active = tab === button;
@@ -260,12 +224,12 @@
     solutionStage.classList.add("is-changing");
     window.setTimeout(() => {
       $("[data-solution-number]").textContent = data.number;
-      $("[data-solution-kicker]").textContent = data.kicker;
-      $("[data-solution-title]").textContent = data.title;
-      $("[data-solution-description]").textContent = data.description;
-      $("[data-solution-outcome]").textContent = data.outcome;
-      $("[data-solution-before]").innerHTML = makeWorkflowItems(data.before);
-      $("[data-solution-after]").innerHTML = makeWorkflowItems(data.after);
+      $("[data-solution-kicker]").textContent = t(data.kicker);
+      $("[data-solution-title]").textContent = t(data.title);
+      $("[data-solution-description]").textContent = t(data.description);
+      $("[data-solution-outcome]").textContent = t(data.outcome);
+      renderWorkflowItems($("[data-solution-before]"), data.before);
+      renderWorkflowItems($("[data-solution-after]"), data.after);
       renderIcons();
       solutionStage.classList.remove("is-changing");
     }, reduceMotion ? 0 : 180);
@@ -310,72 +274,158 @@
     counterElements.forEach(runCounter);
   }
 
-  const caseStudies = {
-    erp: {
-      image: "/assets/case-erp-control-center.webp",
-      alt: "Multi-branch ERP control center with inventory, sales, purchasing, and finance dashboards",
-      eyebrow: "Retail and distribution / ERP",
-      title: "Multi-branch ERP Control Center",
-      summary: "A unified operational platform that gives branch teams the tools they need while management sees the business as one connected system.",
-      problem: "Sales, stock, purchasing, and finance were managed in separate tools, making daily decisions slow and branch comparisons unreliable.",
-      solution: "A modular ERP with a shared data model, role-based workflows, branch-level transactions, and a consolidated management control center.",
-      capabilities: ["Sales and purchasing workflow", "Inventory health by branch", "Receivables and payables", "Management analytics"],
-      result: "Teams work from the same operational record, while management can identify branch issues without waiting for manually assembled reports.",
-      service: "ERP Development"
-    },
-    ai: {
-      image: "/assets/case-ai-quality-inspection.webp",
-      alt: "AI quality inspection system monitoring a food production line",
-      eyebrow: "Food manufacturing / Computer vision",
-      title: "AI Quality Inspection",
-      summary: "A real-time visual inspection layer that turns production camera feeds into consistent quality signals and a usable batch history.",
-      problem: "Manual checks could miss fast-moving defects, and quality trends were difficult to connect back to a specific batch or production period.",
-      solution: "A computer-vision inspection interface with defect classification, live alerts, batch scoring, and a reviewable quality timeline.",
-      capabilities: ["Live object detection", "Defect classification", "Batch quality scoring", "Production alerts and history"],
-      result: "Quality teams can investigate issues earlier, compare batches, and maintain a clearer evidence trail for continuous improvement.",
-      service: "Artificial Intelligence"
-    },
-    portal: {
-      image: "/assets/case-customer-portal.webp",
-      alt: "Responsive customer ordering portal displayed on desktop and mobile",
-      eyebrow: "Food and beverage / Web platform",
-      title: "Customer Ordering Portal",
-      summary: "A responsive ordering experience that connects menu discovery, branch selection, loyalty, checkout, and fulfilment status.",
-      problem: "The customer journey changed between channels, branch availability was unclear, and order progress required manual follow-up.",
-      solution: "One responsive web platform with shared catalogue data, branch-aware availability, loyalty context, and visible order status.",
-      capabilities: ["Responsive ordering flow", "Branch-aware catalogue", "Loyalty and rewards", "Order status tracking"],
-      result: "Customers move through one consistent experience while branch teams receive cleaner, better-structured orders.",
-      service: "Website Development"
-    }
+  const caseDialog = $("#case-dialog");
+  const caseImage = $("[data-case-image]");
+  const caseCaption = $("[data-case-caption]");
+  const caseThumbnails = $("[data-case-thumbnails]");
+  const galleryPrevious = $("[data-gallery-previous]");
+  const galleryNext = $("[data-gallery-next]");
+  const gallerySwipe = $("[data-gallery-swipe]");
+  let activeCaseKey = "";
+  let activeGalleryIndex = 0;
+  let caseOpener = null;
+  let swipeStartX = null;
+
+  const buildCapabilityList = (items) => {
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = t(item);
+      fragment.append(listItem);
+    });
+    $("[data-case-capabilities]").replaceChildren(fragment);
   };
 
-  const caseDialog = $("#case-dialog");
-  const populateCase = (key) => {
-    const data = caseStudies[key];
+  const preloadAdjacentCaseImages = (images, index) => {
+    if (images.length < 2) return;
+    [index - 1, index + 1].forEach((candidate) => {
+      const image = images[(candidate + images.length) % images.length];
+      const preload = new Image();
+      preload.src = image.src;
+    });
+  };
+
+  const renderCaseImage = (index, focusThumbnail = false) => {
+    const data = portfolioCaseStudies[activeCaseKey];
     if (!data) return;
-    $("[data-case-image]").src = data.image;
-    $("[data-case-image]").alt = data.alt;
-    $("[data-case-eyebrow]").textContent = data.eyebrow;
-    $("[data-case-title]").textContent = data.title;
-    $("[data-case-summary]").textContent = data.summary;
-    $("[data-case-problem]").textContent = data.problem;
-    $("[data-case-solution]").textContent = data.solution;
-    $("[data-case-result]").textContent = data.result;
-    $("[data-case-capabilities]").innerHTML = data.capabilities.map((item) => `<li>${item}</li>`).join("");
+    activeGalleryIndex = (index + data.images.length) % data.images.length;
+    const image = data.images[activeGalleryIndex];
+    caseImage.src = image.src;
+    caseImage.alt = t(image.alt);
+    caseCaption.textContent = t(image.caption);
+    $("[data-gallery-current]").textContent = String(activeGalleryIndex + 1);
+    $("[data-gallery-total]").textContent = String(data.images.length);
+    galleryPrevious.hidden = data.images.length <= 1;
+    galleryNext.hidden = data.images.length <= 1;
+    caseThumbnails.hidden = data.images.length <= 1;
+    $$("[data-gallery-index]", caseThumbnails).forEach((thumbnail, thumbnailIndex) => {
+      const active = thumbnailIndex === activeGalleryIndex;
+      thumbnail.classList.toggle("is-active", active);
+      thumbnail.setAttribute("aria-selected", String(active));
+      thumbnail.tabIndex = active ? 0 : -1;
+      if (active && focusThumbnail) thumbnail.focus();
+    });
+    preloadAdjacentCaseImages(data.images, activeGalleryIndex);
+  };
+
+  const buildCaseThumbnails = (images) => {
+    const fragment = document.createDocumentFragment();
+    images.forEach((image, index) => {
+      const button = document.createElement("button");
+      const thumbnail = document.createElement("img");
+      button.className = "case-thumbnail";
+      button.type = "button";
+      button.role = "tab";
+      button.dataset.galleryIndex = String(index);
+      button.setAttribute("aria-label", t(uiText.viewImage, { number: index + 1, caption: t(image.caption) }));
+      thumbnail.src = image.src;
+      thumbnail.alt = "";
+      thumbnail.loading = "lazy";
+      thumbnail.decoding = "async";
+      button.append(thumbnail);
+      button.addEventListener("click", () => renderCaseImage(index, true));
+      fragment.append(button);
+    });
+    caseThumbnails.replaceChildren(fragment);
+  };
+
+  const renderCaseCopy = (data) => {
+    $("[data-case-eyebrow]").textContent = t(data.eyebrow);
+    $("[data-case-title]").textContent = t(data.title);
+    $("[data-case-summary]").textContent = t(data.summary);
+    $("[data-case-problem]").textContent = t(data.problem);
+    $("[data-case-solution]").textContent = t(data.solution);
+    $("[data-case-result]").textContent = t(data.result);
+    buildCapabilityList(data.capabilities);
+  };
+
+  const populateCase = (key, opener) => {
+    const data = portfolioCaseStudies[key];
+    if (!data) return;
+    activeCaseKey = key;
+    activeGalleryIndex = 0;
+    caseOpener = opener || document.activeElement;
+    renderCaseCopy(data);
+    buildCaseThumbnails(data.images);
+    renderCaseImage(0);
     $("[data-case-cta]").dataset.servicePick = data.service;
     caseDialog.showModal();
     document.body.classList.add("dialog-open");
     $("[data-close-case]").focus();
   };
 
-  $$('[data-open-case]').forEach((button) => button.addEventListener("click", () => populateCase(button.dataset.openCase)));
+  $$('[data-open-case]').forEach((button) => button.addEventListener("click", () => populateCase(button.dataset.openCase, button)));
+
+  galleryPrevious?.addEventListener("click", () => renderCaseImage(activeGalleryIndex - 1));
+  galleryNext?.addEventListener("click", () => renderCaseImage(activeGalleryIndex + 1));
+
+  caseDialog?.addEventListener("keydown", (event) => {
+    if (!caseDialog.open || !activeCaseKey) return;
+    const focusThumbnail = Boolean(event.target.closest?.("[data-gallery-index]"));
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      renderCaseImage(activeGalleryIndex - 1, focusThumbnail);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      renderCaseImage(activeGalleryIndex + 1, focusThumbnail);
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      renderCaseImage(0, focusThumbnail);
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      renderCaseImage(portfolioCaseStudies[activeCaseKey].images.length - 1, focusThumbnail);
+    }
+  });
+
+  gallerySwipe?.addEventListener("pointerdown", (event) => {
+    if (event.isPrimary) swipeStartX = event.clientX;
+  });
+  gallerySwipe?.addEventListener("pointerup", (event) => {
+    if (swipeStartX === null || !event.isPrimary) return;
+    const distance = event.clientX - swipeStartX;
+    swipeStartX = null;
+    if (Math.abs(distance) < 48) return;
+    renderCaseImage(activeGalleryIndex + (distance < 0 ? 1 : -1));
+  });
+  gallerySwipe?.addEventListener("pointercancel", () => {
+    swipeStartX = null;
+  });
 
   const closeCase = () => {
     if (caseDialog.open) caseDialog.close();
   };
 
   $("[data-close-case]")?.addEventListener("click", closeCase);
-  caseDialog?.addEventListener("close", () => document.body.classList.remove("dialog-open"));
+  caseDialog?.addEventListener("close", () => {
+    document.body.classList.remove("dialog-open");
+    activeCaseKey = "";
+    const opener = caseOpener;
+    caseOpener = null;
+    opener?.focus();
+  });
   caseDialog?.addEventListener("click", (event) => {
     const bounds = caseDialog.getBoundingClientRect();
     const inside = event.clientX >= bounds.left && event.clientX <= bounds.right && event.clientY >= bounds.top && event.clientY <= bounds.bottom;
@@ -385,85 +435,44 @@
     const value = event.currentTarget.dataset.servicePick;
     const serviceField = $("#inquiry-form")?.elements.service;
     if (value && serviceField) serviceField.value = value;
+    caseOpener = null;
     closeCase();
   });
 
-  $$("[data-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const filter = button.dataset.filter;
-      $$("[data-filter]").forEach((item) => {
-        const active = item === button;
-        item.classList.toggle("is-active", active);
-        item.setAttribute("aria-selected", String(active));
-      });
-      $$("[data-project]").forEach((project) => {
-        project.classList.toggle("is-hidden", filter !== "all" && project.dataset.category !== filter);
-      });
+  const filterButtons = $$("[data-filter]");
+  const applyProjectFilter = (button) => {
+    const filter = button.dataset.filter;
+    filterButtons.forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-selected", String(active));
+      item.tabIndex = active ? 0 : -1;
+    });
+    $$("[data-project]").forEach((project) => {
+      const categories = project.dataset.category.split(/\s+/).filter(Boolean);
+      project.classList.toggle("is-hidden", filter !== "all" && !categories.includes(filter));
+    });
+  };
+
+  filterButtons.forEach((button, index) => {
+    button.addEventListener("click", () => applyProjectFilter(button));
+    button.addEventListener("keydown", (event) => {
+      let nextIndex;
+      if (event.key === "ArrowRight") nextIndex = (index + 1) % filterButtons.length;
+      if (event.key === "ArrowLeft") nextIndex = (index - 1 + filterButtons.length) % filterButtons.length;
+      if (event.key === "Home") nextIndex = 0;
+      if (event.key === "End") nextIndex = filterButtons.length - 1;
+      if (nextIndex === undefined) return;
+      event.preventDefault();
+      filterButtons[nextIndex].focus();
+      applyProjectFilter(filterButtons[nextIndex]);
     });
   });
-
-  const processData = [
-    {
-      index: "01",
-      kicker: "Business consultation",
-      title: "Understand the goal before defining the system.",
-      description: "We align on the business context, current pressure points, stakeholders, and the result the project should create.",
-      output: "Shared objectives and discovery brief"
-    },
-    {
-      index: "02",
-      kicker: "Process analysis",
-      title: "See how the work really moves today.",
-      description: "We map people, data, handoffs, exceptions, approvals, and the systems already involved in the operation.",
-      output: "Current-state process map and opportunity list"
-    },
-    {
-      index: "03",
-      kicker: "System planning",
-      title: "Turn findings into a responsible delivery plan.",
-      description: "We define scope, architecture, phases, integrations, risks, and the decisions needed before development begins.",
-      output: "Solution blueprint and phased roadmap"
-    },
-    {
-      index: "04",
-      kicker: "UI and UX design",
-      title: "Make complex workflows feel clear to the people using them.",
-      description: "We design the information hierarchy, key journeys, interfaces, and responsive behavior around actual user roles.",
-      output: "Validated flows and interface design"
-    },
-    {
-      index: "05",
-      kicker: "Development",
-      title: "Build in visible, testable increments.",
-      description: "The solution is developed in structured milestones with working reviews, technical checks, and clear change control.",
-      output: "Working product increments and release notes"
-    },
-    {
-      index: "06",
-      kicker: "Quality assurance",
-      title: "Test the system against real operating scenarios.",
-      description: "We verify functionality, permissions, data integrity, responsiveness, integrations, and critical user journeys.",
-      output: "Acceptance results and launch readiness"
-    },
-    {
-      index: "07",
-      kicker: "Implementation",
-      title: "Launch with the people and data prepared.",
-      description: "Deployment, migration, user access, training, and handover are coordinated around a practical go-live plan.",
-      output: "Deployed system and trained users"
-    },
-    {
-      index: "08",
-      kicker: "Maintenance and support",
-      title: "Keep the system useful as the business changes.",
-      description: "We monitor, resolve issues, review improvement requests, and plan the next valuable iteration after launch.",
-      output: "Support rhythm and improvement backlog"
-    }
-  ];
+  applyProjectFilter($("[data-filter].is-active") || filterButtons[0]);
 
   const processDetail = $(".process-detail");
   const setProcess = (index, button) => {
-    const data = processData[index];
+    const data = processContent[index];
     if (!data || button.classList.contains("is-active")) return;
     $$("[data-process]").forEach((item) => {
       const active = item === button;
@@ -473,10 +482,10 @@
     processDetail.classList.add("is-changing");
     window.setTimeout(() => {
       $("[data-process-index]").textContent = data.index;
-      $("[data-process-kicker]").textContent = data.kicker;
-      $("[data-process-title]").textContent = data.title;
-      $("[data-process-description]").textContent = data.description;
-      $("[data-process-output]").textContent = data.output;
+      $("[data-process-kicker]").textContent = t(data.kicker);
+      $("[data-process-title]").textContent = t(data.title);
+      $("[data-process-description]").textContent = t(data.description);
+      $("[data-process-output]").textContent = t(data.output);
       processDetail.classList.remove("is-changing");
     }, reduceMotion ? 0 : 160);
   };
@@ -552,12 +561,12 @@
   };
 
   const fieldMessage = (input) => {
-    if (input.validity.valueMissing) return "This field is required.";
-    if (input.validity.typeMismatch) return "Enter a valid email address.";
-    if (input.validity.tooShort) return `Use at least ${input.minLength} characters.`;
-    if (input.validity.tooLong) return `Use no more than ${input.maxLength} characters.`;
+    if (input.validity.valueMissing) return t(uiText.required);
+    if (input.validity.typeMismatch) return t(uiText.email);
+    if (input.validity.tooShort) return t(uiText.minimum, { count: input.minLength });
+    if (input.validity.tooLong) return t(uiText.maximum, { count: input.maxLength });
     if (input.name === "whatsapp" && input.value.trim() && !/^[+0-9()\-\s]{7,24}$/.test(input.value.trim())) {
-      return "Enter a valid phone or WhatsApp number.";
+      return t(uiText.phone);
     }
     return "";
   };
@@ -582,7 +591,7 @@
     let consentValid = true;
     if (step === 2) {
       consentValid = inquiryForm.elements.consent.checked;
-      consentError.textContent = consentValid ? "" : "Please confirm before sending your inquiry.";
+      consentError.textContent = consentValid ? "" : t(uiText.consent);
     }
     const valid = results.every(Boolean) && consentValid;
     if (!valid) {
@@ -628,15 +637,15 @@
   fileInput?.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) {
-      fileLabel.textContent = "Attach a brief or reference";
+      fileLabel.textContent = t(uiText.attachmentLabel);
       return;
     }
     const allowedExtensions = ["pdf", "doc", "docx"];
     const extension = file.name.split(".").pop()?.toLowerCase();
     if (!allowedExtensions.includes(extension) || file.size > 2 * 1024 * 1024) {
       fileInput.value = "";
-      fileLabel.textContent = "Attach a brief or reference";
-      showToast("Please choose a PDF, DOC, or DOCX file no larger than 2 MB.", "error");
+      fileLabel.textContent = t(uiText.attachmentLabel);
+      showToast(uiText.attachmentInvalid, "error");
       return;
     }
     fileLabel.textContent = file.name;
@@ -695,7 +704,7 @@
         return;
       }
       const reader = new FileReader();
-      reader.onerror = () => reject(new Error("The selected attachment could not be read."));
+      reader.onerror = () => reject(new Error(t(uiText.attachmentUnreadable)));
       reader.onload = () => {
         const result = String(reader.result);
         resolve({
@@ -722,8 +731,7 @@
     const originalSubmit = submitButton.innerHTML;
     submitButton.disabled = true;
     submitButton.classList.add("is-loading");
-    submitButton.innerHTML = '<span>Sending securely</span><i data-lucide="loader-circle" aria-hidden="true"></i>';
-    renderIcons();
+    setButtonContent(submitButton, uiText.sending, "loader-circle");
 
     try {
       const formData = new FormData(inquiryForm);
@@ -740,18 +748,18 @@
         body: JSON.stringify(payload)
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.message || "Your inquiry could not be sent.");
+      if (!response.ok) throw new Error(t(result.message || uiText.inquiryFailed));
 
       localStorage.removeItem(draftKey);
       inquiryForm.hidden = true;
       $(".form-progress").hidden = true;
       formSuccess.hidden = false;
-      $("[data-inquiry-id]").textContent = result.id || "received";
+      $("[data-inquiry-id]").textContent = result.id || t(uiText.received);
       formSuccess.focus();
-      showToast("Your inquiry has been received.");
+      showToast(uiText.inquiryReceived);
     } catch (error) {
       saveDraft();
-      showToast(`${error.message} Your draft is still saved in this browser.`, "error");
+      showToast(`${error.message} ${t(uiText.draftSaved)}`, "error");
       submitButton.disabled = false;
       submitButton.classList.remove("is-loading");
       submitButton.innerHTML = originalSubmit;
@@ -764,13 +772,12 @@
     inquiryForm.hidden = false;
     $(".form-progress").hidden = false;
     formSuccess.hidden = true;
-    fileLabel.textContent = "Attach a brief or reference";
+    fileLabel.textContent = t(uiText.attachmentLabel);
     characterCount.textContent = "0";
     setFormStep(1);
     submitButton.disabled = false;
     submitButton.classList.remove("is-loading");
-    submitButton.innerHTML = '<span>Send inquiry</span><i data-lucide="send" aria-hidden="true"></i>';
-    renderIcons();
+    setButtonContent(submitButton, uiText.sendInquiry, "send");
     inquiryForm.elements.name.focus();
   });
 

@@ -39,6 +39,15 @@ const attachDiagnostics = (page, label) => {
 
 const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
 attachDiagnostics(desktop, "desktop");
+let submittedInquiry = null;
+await desktop.route("**/api/inquiry", async (route) => {
+  submittedInquiry = JSON.parse(route.request().postData() || "{}");
+  await route.fulfill({
+    status: 201,
+    contentType: "application/json",
+    body: JSON.stringify({ id: "INQ-E2E-TEST" })
+  });
+});
 await desktop.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
 await desktop.waitForTimeout(850);
 await desktop.screenshot({ path: join(output, "desktop-first-view.png"), fullPage: false });
@@ -158,6 +167,13 @@ if (!(await desktop.locator('[data-form-step="2"]').isVisible())) issues.push("I
 if (await desktop.locator("[data-form-success]").isVisible()) issues.push("Inquiry success panel was visible before submission.");
 await desktop.waitForTimeout(450);
 await desktop.screenshot({ path: join(output, "desktop-contact-step-two.png"), fullPage: false });
+await desktop.fill('[name="brief"]', "E2E inquiry context that is long enough for validation.");
+await desktop.check('[name="consent"]');
+await desktop.click("[data-submit-button]");
+await desktop.locator("[data-form-success]").waitFor({ state: "visible" });
+if (!submittedInquiry || submittedInquiry.consent !== true) issues.push("Inquiry form did not submit a valid browser payload.");
+if ((await desktop.locator("[data-inquiry-id]").textContent()) !== "INQ-E2E-TEST") issues.push("Inquiry success reference was not rendered.");
+await desktop.click("[data-new-inquiry]");
 
 const responsiveLayouts = {};
 for (const viewport of [

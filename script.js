@@ -575,7 +575,7 @@ const t = (source, parameters = {}) =>
     const error = $(".field-error", field);
     const message = fieldMessage(input);
     field.classList.toggle("is-invalid", Boolean(message));
-    error.textContent = message;
+    if (error) error.textContent = message;
     input.setAttribute("aria-invalid", String(Boolean(message)));
     return !message;
   };

@@ -40,7 +40,7 @@ test("the static server delivers the homepage with security headers", async (con
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-security-policy"), /default-src 'self'/);
-  assert.match(html, /Turn complex operations/);
+  assert.match(html, /See working products/);
 
   const servicesResponse = await fetch(`http://127.0.0.1:${address.port}/services`);
   const servicesHtml = await servicesResponse.text();

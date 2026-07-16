@@ -7,6 +7,8 @@ import {
 } from "./content.js";
 import { mountSiteShell } from "./site-shell.js";
 
+document.documentElement.classList.add("has-js");
+document.body.classList.add("is-page-entering");
 mountSiteShell();
 
 const t = (source, parameters = {}) =>
@@ -21,6 +23,34 @@ const t = (source, parameters = {}) =>
   const $ = (selector, context = document) => context.querySelector(selector);
   const $$ = (selector, context = document) => (context ? [...context.querySelectorAll(selector)] : []);
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let pageEntryFinished = false;
+  const finishPageEntry = () => {
+    if (pageEntryFinished) return;
+    pageEntryFinished = true;
+    document.body.classList.add("is-page-ready");
+    document.body.classList.remove("is-page-entering");
+  };
+
+  if (reduceMotion) finishPageEntry();
+  else {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(finishPageEntry));
+    window.setTimeout(finishPageEntry, 120);
+  }
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest("a[href]");
+    if (!link || link.target || link.hasAttribute("download")) return;
+
+    const destination = new URL(link.href, window.location.href);
+    if (destination.origin !== window.location.origin || destination.protocol !== window.location.protocol) return;
+    if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
+
+    event.preventDefault();
+    document.body.classList.add("is-page-leaving");
+    window.setTimeout(() => window.location.assign(destination.href), reduceMotion ? 0 : 300);
+  });
 
   const renderIcons = () => {
     if (window.lucide?.createIcons) {
@@ -208,6 +238,22 @@ const t = (source, parameters = {}) =>
   }
 
   if (!reduceMotion && window.matchMedia("(pointer: fine)").matches) {
+    $$(".page-intro").forEach((intro) => {
+      const visual = $("[data-scene-visual]", intro);
+      if (!visual) return;
+      intro.addEventListener("pointermove", (event) => {
+        const bounds = intro.getBoundingClientRect();
+        const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+        const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+        visual.style.setProperty("--visual-shift-x", `${(x * 18).toFixed(2)}px`);
+        visual.style.setProperty("--visual-shift-y", `${(y * 12).toFixed(2)}px`);
+      });
+      intro.addEventListener("pointerleave", () => {
+        visual.style.setProperty("--visual-shift-x", "0px");
+        visual.style.setProperty("--visual-shift-y", "0px");
+      });
+    });
+
     $$('[data-tilt]').forEach((card) => {
       card.addEventListener("pointermove", (event) => {
         const bounds = card.getBoundingClientRect();

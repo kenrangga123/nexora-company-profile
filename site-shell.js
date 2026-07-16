@@ -1,6 +1,6 @@
 const navigation = [
-  { key: "services", label: "Services", href: "/services" },
   { key: "prototype-work", label: "Prototype Work", href: "/prototype-work" },
+  { key: "services", label: "Services", href: "/services" },
   { key: "solutions", label: "Solutions", href: "/solutions" },
   { key: "process", label: "Process", href: "/process" },
   { key: "about", label: "About", href: "/about" }
@@ -15,6 +15,13 @@ export const mountSiteShell = () => {
   const activePage = document.body.dataset.page || "home";
   const headerHost = document.querySelector("[data-site-header]");
   const footerHost = document.querySelector("[data-site-footer]");
+
+  if (!document.querySelector("[data-page-transition]")) {
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      '<div class="page-transition" data-page-transition aria-hidden="true"><span></span><span></span></div>'
+    );
+  }
 
   if (headerHost) {
     headerHost.outerHTML = `
@@ -58,9 +65,9 @@ export const mountSiteShell = () => {
           </div>
           <div class="footer-column">
             <h2>Expertise</h2>
+            <a href="/prototype-work">Prototype Work</a>
             <a href="/services">Services</a>
             <a href="/solutions">Solutions</a>
-            <a href="/prototype-work">Prototype Work</a>
           </div>
           <div class="footer-column">
             <h2>Company</h2>

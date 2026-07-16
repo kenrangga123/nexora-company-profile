@@ -31,7 +31,7 @@ await mkdir(output, { recursive: true });
 
 const issues = [];
 const pageDefinitions = [
-  { path: "/", key: "home", marker: ".hero", title: "Turn complex operations" },
+  { path: "/", key: "home", marker: ".hero", title: "See working products" },
   { path: "/services", key: "services", marker: "[data-service-stage]", title: "Build the system" },
   { path: "/prototype-work", key: "prototype-work", marker: "[data-project='erp']", title: "Proof you can inspect" },
   { path: "/solutions", key: "solutions", marker: "[data-solution-stage]", title: "Start with the operating problem" },
@@ -68,7 +68,7 @@ const readCanvasSignal = (page) => page.locator("[data-product-scene] canvas").e
 const waitForPage = async (page, definition) => {
   await page.goto(`${baseUrl}${definition.path}`, { waitUntil: "networkidle" });
   await page.locator(definition.marker).waitFor({ state: "visible" });
-  await page.waitForTimeout(260);
+  await page.waitForTimeout(780);
 };
 
 const readPageState = (page) => page.evaluate(() => {
@@ -88,7 +88,8 @@ const readPageState = (page) => page.evaluate(() => {
       .filter((id, index, ids) => ids.indexOf(id) !== index),
     activeDesktop: activeDesktop.map((link) => link.getAttribute("href")),
     activeCta: activeCta?.getAttribute("href") || "",
-    language: document.documentElement.lang
+    language: document.documentElement.lang,
+    pageReady: document.body.classList.contains("is-page-ready")
   };
 });
 
@@ -112,6 +113,7 @@ for (const definition of pageDefinitions) {
   if (state.missingAlt) issues.push(`${definition.path} has ${state.missingAlt} images without alt attributes.`);
   if (state.duplicateIds.length) issues.push(`${definition.path} has duplicate IDs: ${state.duplicateIds.join(", ")}.`);
   if (state.language !== "en") issues.push(`${definition.path} language is ${state.language}.`);
+  if (!state.pageReady) issues.push(`${definition.path} did not finish its page-entry transition.`);
   if (!["home", "contact"].includes(definition.key) && (state.activeDesktop.length !== 1 || state.activeDesktop[0] !== definition.path)) {
     issues.push(`${definition.path} did not expose one correct active desktop navigation item.`);
   }
@@ -133,6 +135,25 @@ const homeStructure = await desktop.evaluate(() => ({
 }));
 if (homeStructure.legacySections.length) issues.push(`Homepage still contains former single-page sections: ${homeStructure.legacySections.join(", ")}.`);
 if (homeStructure.routes.length !== 6) issues.push("Homepage route list does not expose six focused destinations.");
+if (homeStructure.routes[0] !== "/prototype-work") issues.push("Homepage does not lead with Prototype Work.");
+const shellPriority = await desktop.evaluate(() => ({
+  firstDesktopRoute: document.querySelector(".desktop-nav a")?.getAttribute("href"),
+  visibleBrandText: document.querySelector(".brand")?.textContent.trim() || "",
+  transitionLayer: Boolean(document.querySelector("[data-page-transition]"))
+}));
+if (shellPriority.firstDesktopRoute !== "/prototype-work") issues.push("Desktop navigation does not lead with Prototype Work.");
+if (shellPriority.visibleBrandText !== "N") issues.push("A brand wordmark is still visible in the header.");
+if (!shellPriority.transitionLayer) issues.push("Page transition layer was not mounted.");
+
+const prototypeNavigation = desktop.waitForURL(/\/prototype-work$/);
+await desktop.locator('.desktop-nav a[href="/prototype-work"]').evaluate((link) => link.click());
+await desktop.waitForTimeout(120);
+const transitionState = await desktop.evaluate(() => ({
+  leaving: document.body.classList.contains("is-page-leaving"),
+  overlayOpacity: Number.parseFloat(getComputedStyle(document.querySelector("[data-page-transition]")).opacity)
+}));
+if (!transitionState.leaving || transitionState.overlayOpacity <= 0) issues.push(`Page exit transition did not activate: ${JSON.stringify(transitionState)}`);
+await prototypeNavigation;
 
 await waitForPage(desktop, pageDefinitions[1]);
 await desktop.click('[data-service-category="customPlatforms"]');
@@ -144,11 +165,21 @@ await Promise.all([desktop.waitForURL(/\/contact\?service=/), desktop.click("[da
 if ((await desktop.inputValue('[name="service"]')) !== "Custom Software Development") issues.push("Cross-page service inquiry did not prefill Contact.");
 
 await waitForPage(desktop, pageDefinitions[3]);
+await desktop.locator('[data-solution="automate"]').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(760);
 await desktop.click('[data-solution="automate"]');
 await desktop.waitForTimeout(240);
 if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Automate")) issues.push("Solution explorer did not update.");
 
 await waitForPage(desktop, pageDefinitions[2]);
+const introVisual = desktop.locator(".page-intro [data-scene-visual]");
+await desktop.locator(".page-intro").hover({ position: { x: 1100, y: 260 } });
+await desktop.waitForTimeout(120);
+const introShift = await introVisual.evaluate((element) => ({
+  x: element.style.getPropertyValue("--visual-shift-x"),
+  y: element.style.getPropertyValue("--visual-shift-y")
+}));
+if (!introShift.x || introShift.x === "0px" || !introShift.y || introShift.y === "0px") issues.push("Prototype intro did not respond to pointer depth.");
 const expectedFilterCounts = { "business-systems": 1, "generative-ai": 2, "computer-vision": 2, all: 4 };
 for (const [filter, expected] of Object.entries(expectedFilterCounts)) {
   await desktop.click(`[data-filter="${filter}"]`);
@@ -270,5 +301,5 @@ await legalPage.close();
 await desktop.close();
 await browser.close();
 
-console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, responsive, mobileMenu, reducedMotionState, issues }, null, 2));
+console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, responsive, mobileMenu, reducedMotionState, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

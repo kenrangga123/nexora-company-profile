@@ -3380,20 +3380,14 @@ svg {
 .client-logo-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  gap: clamp(32px, 6vw, 96px);
 }
 
 .client-logo-list figure {
   display: grid;
   min-height: 168px;
   place-items: center;
-  padding: 20px;
-}
-
-.client-logo-list figure + figure {
-  border-inline-start: 1px solid var(--line);
+  padding: 0;
 }
 
 .client-logo-list img {
@@ -3902,7 +3896,7 @@ svg {
 
   .client-logo-list figure {
     min-height: 130px;
-    padding: 14px;
+    padding: 0;
   }
 
   .client-logo-list img {

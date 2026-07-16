@@ -243,6 +243,10 @@ const t = (source, parameters = {}) =>
     const previewTitle = $(".portfolio-preview-status [data-preview-title]");
     let activePreview = 0;
     let previewGesture = null;
+    let previewWheelDistance = 0;
+    let previewWheelLocked = false;
+    let previewWheelReset = null;
+    let suppressPreviewClickUntil = 0;
 
     const renderPreview = (nextIndex) => {
       activePreview = (nextIndex + previewSlides.length) % previewSlides.length;
@@ -252,6 +256,8 @@ const t = (source, parameters = {}) =>
         slide.dataset.position = String(position);
         slide.classList.toggle("is-active", active);
         slide.setAttribute("aria-hidden", String(!active));
+        const openButton = $("[data-preview-open]", slide);
+        if (openButton) openButton.tabIndex = active ? 0 : -1;
       });
 
       const title = previewSlides[activePreview].dataset.previewTitle;
@@ -260,6 +266,31 @@ const t = (source, parameters = {}) =>
     };
 
     const stepPreview = (direction) => renderPreview(activePreview + direction);
+
+    previewCarousel.addEventListener(
+      "wheel",
+      (event) => {
+        const horizontalGesture = Math.abs(event.deltaX) >= 8 && Math.abs(event.deltaX) > Math.abs(event.deltaY) * 1.15;
+        if (!horizontalGesture) return;
+        event.preventDefault();
+        if (previewWheelLocked) return;
+
+        previewWheelDistance += event.deltaX;
+        window.clearTimeout(previewWheelReset);
+        previewWheelReset = window.setTimeout(() => {
+          previewWheelDistance = 0;
+        }, 140);
+        if (Math.abs(previewWheelDistance) < 32) return;
+
+        stepPreview(previewWheelDistance < 0 ? 1 : -1);
+        previewWheelDistance = 0;
+        previewWheelLocked = true;
+        window.setTimeout(() => {
+          previewWheelLocked = false;
+        }, 520);
+      },
+      { passive: false }
+    );
 
     previewCarousel.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
@@ -271,11 +302,19 @@ const t = (source, parameters = {}) =>
     });
 
     previewCarousel.addEventListener("dragstart", (event) => event.preventDefault());
+    previewCarousel.addEventListener(
+      "click",
+      (event) => {
+        if (performance.now() >= suppressPreviewClickUntil) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },
+      true
+    );
     previewCarousel.addEventListener("pointerdown", (event) => {
       if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
       previewGesture = { id: event.pointerId, x: event.clientX, y: event.clientY, deltaX: 0, axis: null };
       previewCarousel.classList.add("is-pressed");
-      if (event.pointerType === "mouse") previewCarousel.setPointerCapture(event.pointerId);
     });
 
     previewCarousel.addEventListener("pointermove", (event) => {
@@ -298,7 +337,10 @@ const t = (source, parameters = {}) =>
       if (!previewGesture || previewGesture.id !== event.pointerId) return;
       const shouldChange = allowChange && previewGesture.axis === "x" && Math.abs(previewGesture.deltaX) >= 44;
       const direction = previewGesture.deltaX > 0 ? 1 : -1;
-      if (shouldChange) stepPreview(direction);
+      if (shouldChange) {
+        suppressPreviewClickUntil = performance.now() + 350;
+        stepPreview(direction);
+      }
       previewCarousel.classList.remove("is-pressed", "is-dragging");
       window.requestAnimationFrame(() => previewCarousel.style.setProperty("--preview-drag-x", "0px"));
       if (previewCarousel.hasPointerCapture(event.pointerId)) previewCarousel.releasePointerCapture(event.pointerId);

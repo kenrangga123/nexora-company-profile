@@ -4988,7 +4988,7 @@ body.is-page-leaving .page-transition::after {
   width: 100%;
   justify-self: stretch;
   outline: none;
-  cursor: grab;
+  cursor: default;
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
@@ -5022,6 +5022,24 @@ body.is-page-leaving .page-transition::after {
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.portfolio-preview-stack [data-preview-slide][data-position="0"] {
+  pointer-events: auto;
+}
+
+.preview-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.preview-open:focus-visible {
+  outline: 2px solid var(--green-bright);
+  outline-offset: -4px;
 }
 
 .portfolio-preview-stack [data-preview-slide][data-position="0"] {

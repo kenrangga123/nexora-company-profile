@@ -183,38 +183,42 @@ if (!introShift.x || introShift.x === "0px" || !introShift.y || introShift.y ===
 
 const previewCarouselState = { sequence: [] };
 const readActivePreview = () => desktop.locator('[data-preview-slide][data-position="0"]').getAttribute("data-preview-project");
-const swipePreview = async (page, direction) => {
+const hoverSwipePreview = async (page, direction) => {
   const previewBounds = await page.locator("[data-preview-carousel]").boundingBox();
   if (!previewBounds) return;
   const y = previewBounds.y + previewBounds.height * 0.52;
-  const startX = previewBounds.x + previewBounds.width * (direction === "right" ? 0.34 : 0.68);
-  const endX = previewBounds.x + previewBounds.width * (direction === "right" ? 0.68 : 0.34);
-  await page.mouse.move(startX, y);
-  await page.mouse.down();
-  await page.mouse.move(endX, y, { steps: 8 });
-  await page.mouse.up();
+  await page.mouse.move(previewBounds.x + previewBounds.width * 0.6, y);
+  await page.mouse.wheel(direction === "right" ? -120 : 120, 0);
   await page.waitForTimeout(820);
 };
 
 previewCarouselState.sequence.push(await readActivePreview());
-await swipePreview(desktop, "right");
+await hoverSwipePreview(desktop, "right");
 previewCarouselState.sequence.push(await readActivePreview());
 await desktop.screenshot({ path: join(output, "prototype-carousel-rag.png"), fullPage: false });
-await swipePreview(desktop, "right");
+await hoverSwipePreview(desktop, "right");
 previewCarouselState.sequence.push(await readActivePreview());
 await desktop.screenshot({ path: join(output, "prototype-carousel-faceswap.png"), fullPage: false });
-await swipePreview(desktop, "right");
+await hoverSwipePreview(desktop, "right");
 previewCarouselState.sequence.push(await readActivePreview());
 await desktop.screenshot({ path: join(output, "prototype-carousel-cctv.png"), fullPage: false });
-await swipePreview(desktop, "left");
+await hoverSwipePreview(desktop, "left");
 previewCarouselState.leftSwipe = await readActivePreview();
-await swipePreview(desktop, "right");
-await swipePreview(desktop, "right");
+await hoverSwipePreview(desktop, "right");
+await hoverSwipePreview(desktop, "right");
 previewCarouselState.returnedTo = await readActivePreview();
 previewCarouselState.visibleControls = await desktop.locator("[data-preview-previous], [data-preview-next], [data-preview-dot], [data-preview-count]").count();
 if (previewCarouselState.sequence.join(",") !== "erp,rag,faceswap,cctv") issues.push(`Prototype carousel order failed: ${previewCarouselState.sequence.join(",")}.`);
 if (previewCarouselState.leftSwipe !== "faceswap" || previewCarouselState.returnedTo !== "erp") issues.push(`Prototype swipe directions or looping failed: ${JSON.stringify(previewCarouselState)}.`);
 if (previewCarouselState.visibleControls !== 0) issues.push("Prototype carousel still exposed arrows, dots, or visual counts.");
+
+const previewCaseOpener = desktop.locator('[data-preview-slide][data-position="0"] [data-preview-open]');
+await previewCaseOpener.click();
+await desktop.locator("#case-dialog").waitFor({ state: "visible" });
+previewCarouselState.openedCase = (await desktop.locator("[data-case-title]").textContent())?.trim();
+if (previewCarouselState.openedCase !== "Modular ERP Operations Platform") issues.push(`Active prototype image opened the wrong details: ${previewCarouselState.openedCase}.`);
+await desktop.click("[data-close-case]");
+if (!(await previewCaseOpener.evaluate((element) => element === document.activeElement))) issues.push("Prototype detail dialog did not restore focus to its image.");
 
 await desktop.locator(".client-band").scrollIntoViewIfNeeded();
 await desktop.waitForTimeout(760);
@@ -245,14 +249,14 @@ await desktop.waitForTimeout(180);
 const cardTransform = await erpCard.locator(".project-open").evaluate((element) => getComputedStyle(element).transform);
 if (!cardTransform || cardTransform === "none") issues.push("Prototype card did not respond with a 3D transform.");
 await desktop.mouse.move(0, 0);
-await desktop.click('[data-open-case="erp"]');
+await erpCard.locator('[data-open-case="erp"]').click();
 if ((await desktop.locator("[data-gallery-total]").textContent()) !== "3") issues.push("ERP gallery image count is incorrect.");
 await desktop.click("[data-gallery-next]");
 await desktop.keyboard.press("ArrowRight");
 if ((await desktop.locator("[data-gallery-current]").textContent()) !== "3") issues.push("Gallery click and keyboard navigation failed.");
 await desktop.click("[data-close-case]");
-if (!(await desktop.locator('[data-open-case="erp"]').evaluate((element) => element === document.activeElement))) issues.push("Gallery did not restore focus.");
-await desktop.click('[data-open-case="cctv"]');
+if (!(await erpCard.locator('[data-open-case="erp"]').evaluate((element) => element === document.activeElement))) issues.push("Gallery did not restore focus.");
+await desktop.click('[data-project="cctv"] [data-open-case="cctv"]');
 if (await desktop.locator("[data-gallery-next]").isVisible()) issues.push("Single-image gallery still exposed navigation.");
 await desktop.click("[data-close-case]");
 
@@ -348,7 +352,7 @@ const reducedMotionState = await reducedMotionPage.evaluate(() => ({
 }));
 if (!reducedMotionState.allRevealsVisible || reducedMotionState.heroTransform !== "none") issues.push(`Reduced-motion state failed: ${JSON.stringify(reducedMotionState)}`);
 await reducedMotionPage.goto(`${baseUrl}/prototype-work`, { waitUntil: "networkidle" });
-await swipePreview(reducedMotionPage, "right");
+await hoverSwipePreview(reducedMotionPage, "right");
 const reducedCarouselState = await reducedMotionPage.evaluate(() => ({
   active: document.querySelector('[data-preview-slide][data-position="0"]')?.dataset.previewProject,
   transition: Number.parseFloat(getComputedStyle(document.querySelector("[data-preview-slide]")).transitionDuration)

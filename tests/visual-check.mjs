@@ -37,6 +37,31 @@ const attachDiagnostics = (page, label) => {
   page.on("pageerror", (error) => issues.push(`${label} page error: ${error.message}`));
 };
 
+const readCanvasSignal = (page) => page.locator("[data-product-scene] canvas").evaluate((canvas) => {
+  const context = canvas.getContext("webgl2") || canvas.getContext("webgl");
+  const ready = canvas.closest("[data-product-scene]").classList.contains("is-webgl-ready");
+  if (!context) return { ready, width: canvas.width, height: canvas.height, litSamples: 0, spread: 0 };
+
+  const pixels = new Uint8Array(context.drawingBufferWidth * context.drawingBufferHeight * 4);
+  context.readPixels(0, 0, context.drawingBufferWidth, context.drawingBufferHeight, context.RGBA, context.UNSIGNED_BYTE, pixels);
+  let litSamples = 0;
+  let minimum = 765;
+  let maximum = 0;
+  for (let index = 0; index < pixels.length; index += 64) {
+    const brightness = pixels[index] + pixels[index + 1] + pixels[index + 2];
+    if (pixels[index + 3] > 8 && brightness > 18) litSamples += 1;
+    minimum = Math.min(minimum, brightness);
+    maximum = Math.max(maximum, brightness);
+  }
+  return {
+    ready,
+    width: context.drawingBufferWidth,
+    height: context.drawingBufferHeight,
+    litSamples,
+    spread: maximum - minimum
+  };
+});
+
 const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
 attachDiagnostics(desktop, "desktop");
 let submittedInquiry = null;
@@ -49,8 +74,13 @@ await desktop.route("**/api/inquiry", async (route) => {
   });
 });
 await desktop.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-await desktop.waitForTimeout(850);
+await desktop.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
+await desktop.waitForTimeout(300);
 await desktop.screenshot({ path: join(output, "desktop-first-view.png"), fullPage: false });
+const desktopCanvasSignal = await readCanvasSignal(desktop);
+if (!desktopCanvasSignal.ready || desktopCanvasSignal.litSamples < 250 || desktopCanvasSignal.spread < 30) {
+  issues.push(`Desktop 3D canvas was blank or visually flat: ${JSON.stringify(desktopCanvasSignal)}`);
+}
 
 const desktopLayout = await desktop.evaluate(() => ({
   title: document.title,
@@ -78,6 +108,13 @@ if ((await desktop.inputValue('[name="service"]')) !== "Custom Software Developm
 await desktop.locator("#work").scrollIntoViewIfNeeded();
 await desktop.waitForTimeout(760);
 await desktop.locator("#work").screenshot({ path: join(output, "desktop-prototype-work.png") });
+const erpCard = desktop.locator('[data-project="erp"]');
+await erpCard.hover({ position: { x: 560, y: 100 } });
+await desktop.waitForTimeout(220);
+const erpCardTransform = await erpCard.locator(".project-open").evaluate((element) => getComputedStyle(element).transform);
+if (!erpCardTransform || erpCardTransform === "none") issues.push("Project image did not respond with a 3D transform.");
+await erpCard.screenshot({ path: join(output, "desktop-project-3d-hover.png") });
+await desktop.mouse.move(0, 0);
 await desktop.click('[data-open-case="erp"]');
 if (!(await desktop.locator("#case-dialog").evaluate((dialog) => dialog.open))) issues.push("Case study dialog did not open.");
 if ((await desktop.locator("[data-gallery-total]").textContent()) !== "3") issues.push("ERP gallery did not expose three images.");
@@ -121,7 +158,14 @@ for (const section of ["services", "solutions", "work", "industries", "process",
   await desktop.locator(`#${section}`).scrollIntoViewIfNeeded();
   await desktop.waitForTimeout(760);
 }
-const repeatReveal = desktop.locator("#services .section-heading");
+const repeatReveal = desktop.locator("#work .section-heading");
+await repeatReveal.scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(760);
+await desktop.evaluate(() => {
+  document.documentElement.style.scrollBehavior = "auto";
+  window.scrollTo(0, document.documentElement.scrollHeight);
+});
+await desktop.waitForTimeout(760);
 const upwardReset = await repeatReveal.evaluate((element) => ({
   visible: element.classList.contains("is-visible"),
   offset: element.style.getPropertyValue("--reveal-offset")
@@ -187,12 +231,15 @@ for (const viewport of [
   await page.waitForTimeout(850);
   const firstView = await page.evaluate(() => {
     const shell = document.querySelector(".header-inner").getBoundingClientRect();
+    const nextSection = document.querySelector("#services .section-title").getBoundingClientRect();
     return {
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
       shellWidth: Math.round(shell.width),
       shellLeft: Math.round(shell.left),
-      desktopNavVisible: getComputedStyle(document.querySelector(".desktop-nav")).display !== "none"
+      desktopNavVisible: getComputedStyle(document.querySelector(".desktop-nav")).display !== "none",
+      nextSectionTop: Math.round(nextSection.top),
+      viewportHeight: window.innerHeight
     };
   });
   await page.screenshot({ path: join(output, `${viewport.name}-first-view.png`), fullPage: false });
@@ -217,6 +264,7 @@ for (const viewport of [
   await page.screenshot({ path: join(output, `${viewport.name}-contact.png`), fullPage: false });
   responsiveLayouts[viewport.name] = { ...firstView, ...contactView };
   if (firstView.scrollWidth > firstView.clientWidth) issues.push(`${viewport.name} horizontal overflow: ${firstView.scrollWidth}/${firstView.clientWidth}`);
+  if (firstView.nextSectionTop >= firstView.viewportHeight) issues.push(`${viewport.name} first view did not hint at the next section.`);
   if (viewport.width >= 1000 && firstView.shellWidth / firstView.clientWidth < 0.9) issues.push(`${viewport.name} shell is still too narrow: ${firstView.shellWidth}/${firstView.clientWidth}`);
   if (viewport.width >= 1000 && contactView.contactHeight < viewport.height - 80) issues.push(`${viewport.name} contact section does not fill the laptop viewport.`);
   if (viewport.width <= 900 && contactView.gridColumns.split(" ").length > 1) issues.push(`${viewport.name} contact layout did not stack.`);
@@ -226,17 +274,25 @@ for (const viewport of [
 const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 attachDiagnostics(mobile, "mobile");
 await mobile.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-await mobile.waitForTimeout(850);
+await mobile.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
+await mobile.waitForTimeout(300);
 await mobile.screenshot({ path: join(output, "mobile-first-view.png"), fullPage: false });
+const mobileCanvasSignal = await readCanvasSignal(mobile);
+if (!mobileCanvasSignal.ready || mobileCanvasSignal.litSamples < 100 || mobileCanvasSignal.spread < 30) {
+  issues.push(`Mobile 3D canvas was blank or visually flat: ${JSON.stringify(mobileCanvasSignal)}`);
+}
 const mobileInitialLayout = await mobile.evaluate(() => ({
   clientWidth: document.documentElement.clientWidth,
   scrollWidth: document.documentElement.scrollWidth,
   heroBottom: document.querySelector(".hero").getBoundingClientRect().bottom,
   viewportHeight: window.innerHeight,
-  headerHeight: document.querySelector(".site-header").getBoundingClientRect().height
+  headerHeight: document.querySelector(".site-header").getBoundingClientRect().height,
+  nextSectionTop: Math.round(document.querySelector("#services .section-title").getBoundingClientRect().top)
 }));
+if (mobileInitialLayout.nextSectionTop >= mobileInitialLayout.viewportHeight) issues.push("Mobile first view did not hint at the next section.");
 await mobile.click("[data-menu-toggle]");
 if ((await mobile.getAttribute("[data-menu-toggle]", "aria-expanded")) !== "true") issues.push("Mobile menu did not open.");
+await mobile.waitForTimeout(300);
 const mobileMenuLayout = await mobile.locator("[data-mobile-menu]").evaluate((element) => {
   const style = getComputedStyle(element);
   const bounds = element.getBoundingClientRect();
@@ -267,6 +323,23 @@ if (await mobile.locator(".floating-contact").isVisible()) issues.push("Mobile f
 if (await mobile.locator("[data-back-top]").isVisible()) issues.push("Mobile back-to-top action remained visible over the inquiry section.");
 await mobile.screenshot({ path: join(output, "mobile-contact.png"), fullPage: false });
 
+const reducedMotionPage = await browser.newPage({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" });
+attachDiagnostics(reducedMotionPage, "reduced-motion");
+await reducedMotionPage.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+await reducedMotionPage.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
+const reducedMotionState = await reducedMotionPage.evaluate(() => ({
+  allRevealsVisible: [...document.querySelectorAll("[data-reveal]")].every((element) => element.classList.contains("is-visible")),
+  heroTransform: getComputedStyle(document.querySelector("[data-product-scene]")).transform
+}));
+const reducedMotionCanvasSignal = await readCanvasSignal(reducedMotionPage);
+if (!reducedMotionState.allRevealsVisible || reducedMotionState.heroTransform !== "none") {
+  issues.push(`Reduced-motion layout still animated hidden content: ${JSON.stringify(reducedMotionState)}`);
+}
+if (!reducedMotionCanvasSignal.ready || reducedMotionCanvasSignal.litSamples < 250) {
+  issues.push(`Reduced-motion 3D canvas was blank: ${JSON.stringify(reducedMotionCanvasSignal)}`);
+}
+await reducedMotionPage.close();
+
 const legalPage = await browser.newPage({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
 attachDiagnostics(legalPage, "legal");
 for (const legalPath of ["privacy.html", "terms.html"]) {
@@ -285,5 +358,5 @@ if (desktopLayout.duplicateIds.length) issues.push(`Duplicate IDs: ${desktopLayo
 if (desktopLayout.languageControls) issues.push("English-only release still exposes a language selector.");
 if (desktopLayout.language !== "en") issues.push(`Homepage language is ${desktopLayout.language} instead of en.`);
 
-console.log(JSON.stringify({ desktopLayout, responsiveLayouts, mobileLayout: mobileInitialLayout, mobileMenuLayout, issues }, null, 2));
+console.log(JSON.stringify({ desktopLayout, desktopCanvasSignal, responsiveLayouts, mobileLayout: mobileInitialLayout, mobileCanvasSignal, mobileMenuLayout, reducedMotionState, reducedMotionCanvasSignal, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

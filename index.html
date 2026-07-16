@@ -109,9 +109,8 @@
 
     <header class="site-header" data-header>
       <div class="header-inner shell">
-        <a class="brand" href="#home" aria-label="Nexora Digital home">
+        <a class="brand" href="#home" aria-label="Home">
           <span class="brand-glyph" aria-hidden="true">N</span>
-          <span class="brand-name">NEXORA<span>.</span></span>
         </a>
 
         <nav class="desktop-nav" aria-label="Primary navigation">
@@ -155,7 +154,7 @@
     </header>
 
     <main id="main-content">
-      <section class="hero" id="home" data-section>
+      <section class="hero is-scene-active" id="home" data-section data-scene>
         <img
           class="hero-media"
           src="/assets/hero-connected-operations.webp"
@@ -166,6 +165,20 @@
         />
         <div class="hero-shade" aria-hidden="true"></div>
         <div class="hero-grid" aria-hidden="true"></div>
+        <div class="hero-product-scene" data-product-scene data-scene-visual aria-hidden="true">
+          <canvas></canvas>
+          <div class="hero-product-fallback">
+            <figure class="hero-screen hero-screen-erp"><img src="/assets/work/erp-pos.webp" alt="" /></figure>
+            <figure class="hero-screen hero-screen-rag"><img src="/assets/work/rag-grounded-answer.webp" alt="" /></figure>
+            <figure class="hero-screen hero-screen-ai"><img src="/assets/work/faceswap-capture.webp" alt="" /></figure>
+            <figure class="hero-screen hero-screen-vision"><img src="/assets/work/cctv-motion-dashboard.webp" alt="" /></figure>
+          </div>
+          <div class="hero-domain-icons">
+            <span><i data-lucide="boxes"></i></span>
+            <span><i data-lucide="brain-circuit"></i></span>
+            <span><i data-lucide="scan-eye"></i></span>
+          </div>
+        </div>
 
         <div class="hero-inner shell">
           <div class="hero-copy" data-reveal>
@@ -202,12 +215,15 @@
         </div>
       </section>
 
-      <section class="section services" id="services" data-section>
+      <section class="section services" id="services" data-section data-scene>
         <div class="shell">
           <div class="section-heading heading-split" data-reveal>
-            <div>
-              <p class="eyebrow">What we build</p>
-              <h2>Three focused ways to improve how work moves.</h2>
+            <div class="section-title">
+              <span class="section-focus" aria-hidden="true"><i data-lucide="boxes"></i></span>
+              <div>
+                <p class="eyebrow">What we build</p>
+                <h2>Three focused ways to improve how work moves.</h2>
+              </div>
             </div>
             <p>
               Choose the area closest to your current pressure point. Each can start independently
@@ -215,7 +231,7 @@
             </p>
           </div>
 
-          <div class="service-explorer" data-reveal>
+          <div class="service-explorer" data-reveal data-scene-visual>
             <div class="service-tabs" role="tablist" aria-label="Service categories">
               <button class="service-tab is-active" type="button" role="tab" aria-selected="true" data-service-category="businessSystems">
                 <span>01</span><i data-lucide="boxes" aria-hidden="true"></i><strong>Business Systems</strong>
@@ -229,28 +245,41 @@
             </div>
 
             <div class="service-stage" data-service-stage aria-live="polite">
-              <p class="card-kicker" data-service-kicker>Connected operations</p>
-              <h3 data-service-title>Run the business from one reliable operational core.</h3>
-              <p data-service-description>Connect daily transactions, management visibility, and the systems that keep teams aligned.</p>
-              <ul class="service-offerings" data-service-offerings>
-                <li><i data-lucide="check" aria-hidden="true"></i><span>ERP Development</span></li>
-                <li><i data-lucide="check" aria-hidden="true"></i><span>Dashboard and Analytics</span></li>
-                <li><i data-lucide="check" aria-hidden="true"></i><span>System Integration</span></li>
-              </ul>
-              <a class="text-link" href="#contact" data-service-cta data-service-pick="ERP Development">
-                <span>Discuss your business system</span><i data-lucide="arrow-right" aria-hidden="true"></i>
-              </a>
+              <div class="service-symbol" aria-hidden="true">
+                <span class="service-symbol-axis service-symbol-axis-x"></span>
+                <span class="service-symbol-axis service-symbol-axis-y"></span>
+                <div class="service-symbol-core"><i data-lucide="boxes" data-service-icon></i></div>
+                <span class="service-symbol-node node-data"><i data-lucide="database"></i></span>
+                <span class="service-symbol-node node-flow"><i data-lucide="workflow"></i></span>
+                <span class="service-symbol-node node-view"><i data-lucide="chart-no-axes-combined"></i></span>
+              </div>
+              <div class="service-stage-copy">
+                <p class="card-kicker" data-service-kicker>Connected operations</p>
+                <h3 data-service-title>Run the business from one reliable operational core.</h3>
+                <p data-service-description>Connect daily transactions, management visibility, and the systems that keep teams aligned.</p>
+                <ul class="service-offerings" data-service-offerings>
+                  <li><i data-lucide="check" aria-hidden="true"></i><span>ERP Development</span></li>
+                  <li><i data-lucide="check" aria-hidden="true"></i><span>Dashboard and Analytics</span></li>
+                  <li><i data-lucide="check" aria-hidden="true"></i><span>System Integration</span></li>
+                </ul>
+                <a class="text-link" href="#contact" data-service-cta data-service-pick="ERP Development">
+                  <span>Discuss your business system</span><i data-lucide="arrow-right" aria-hidden="true"></i>
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="section work" id="work" data-section>
+      <section class="section work" id="work" data-section data-scene>
         <div class="shell">
           <div class="section-heading heading-split" data-reveal>
-            <div>
-              <p class="eyebrow">Working prototypes</p>
-              <h2>Real systems, explored through the interfaces we built.</h2>
+            <div class="section-title">
+              <span class="section-focus" aria-hidden="true"><i data-lucide="panels-top-left"></i></span>
+              <div>
+                <p class="eyebrow">Working prototypes</p>
+                <h2>Real systems, explored through the interfaces we built.</h2>
+              </div>
             </div>
             <p>
               Four product prototypes spanning business operations, grounded AI, interactive
@@ -265,10 +294,10 @@
             <button class="filter-button" type="button" role="tab" aria-selected="false" data-filter="computer-vision">Computer vision</button>
           </div>
 
-          <div class="work-grid">
-            <article class="project-card" data-project="erp" data-category="business-systems" data-reveal>
+          <div class="work-grid" data-scene-visual>
+            <article class="project-card" data-project="erp" data-category="business-systems" data-depth-card>
               <button class="project-open" type="button" aria-label="Open Modular ERP Operations Platform prototype" data-open-case="erp">
-                <figure class="project-media">
+                <figure class="project-media" data-product-image>
                   <img
                     src="/assets/work/erp-pos.webp"
                     alt="Modular ERP point-of-sale workspace with products, branch controls, and checkout panel"
@@ -288,9 +317,9 @@
               </button>
             </article>
 
-            <article class="project-card" data-project="rag" data-category="generative-ai" data-reveal>
+            <article class="project-card" data-project="rag" data-category="generative-ai" data-depth-card>
               <button class="project-open" type="button" aria-label="Open Private Company RAG Assistant prototype" data-open-case="rag">
-                <figure class="project-media project-media-light">
+                <figure class="project-media project-media-light" data-product-image>
                   <img
                     src="/assets/work/rag-grounded-answer.webp"
                     alt="Private company assistant answering a policy question with source evidence and access controls"
@@ -310,9 +339,9 @@
               </button>
             </article>
 
-            <article class="project-card" data-project="faceswap" data-category="generative-ai computer-vision" data-reveal>
+            <article class="project-card" data-project="faceswap" data-category="generative-ai computer-vision" data-depth-card>
               <button class="project-open" type="button" aria-label="Open Hero Booth AI Transformation prototype" data-open-case="faceswap">
-                <figure class="project-media project-media-light">
+                <figure class="project-media project-media-light" data-product-image>
                   <img
                     src="/assets/work/faceswap-capture.webp"
                     alt="Hero Booth photo capture interface with a guided three-step transformation journey"
@@ -332,9 +361,9 @@
               </button>
             </article>
 
-            <article class="project-card" data-project="cctv" data-category="computer-vision" data-reveal>
+            <article class="project-card" data-project="cctv" data-category="computer-vision" data-depth-card>
               <button class="project-open" type="button" aria-label="Open Motion-Triggered CCTV Dashboard prototype" data-open-case="cctv">
-                <figure class="project-media project-media-dark project-media-cctv">
+                <figure class="project-media project-media-dark project-media-cctv" data-product-image>
                   <img
                     src="/assets/work/cctv-motion-dashboard.webp"
                     alt="Motion capture dashboard with anonymized live detection, system health, and saved recordings"
@@ -357,9 +386,10 @@
         </div>
       </section>
 
-      <section class="section solutions" id="solutions" data-section>
+      <section class="section solutions" id="solutions" data-section data-scene>
         <div class="shell">
           <div class="section-heading solutions-heading" data-reveal>
+            <span class="section-focus section-focus-dark" aria-hidden="true"><i data-lucide="workflow"></i></span>
             <p class="eyebrow eyebrow-dark">Business outcomes</p>
             <h2>Solve the operational problem first.</h2>
             <p>Explore four ways connected systems can improve daily work.</p>
@@ -380,7 +410,7 @@
             </button>
           </div>
 
-          <div class="solution-stage" data-solution-stage data-reveal>
+          <div class="solution-stage" data-solution-stage data-reveal data-scene-visual>
             <div class="solution-copy">
               <p class="solution-number" data-solution-number>01 / 04</p>
               <p class="card-kicker" data-solution-kicker>From manual to visible</p>
@@ -423,17 +453,20 @@
         </div>
       </section>
 
-      <section class="section process" id="process" data-section>
+      <section class="section process" id="process" data-section data-scene>
         <div class="shell">
           <div class="section-heading heading-split" data-reveal>
-            <div>
-              <p class="eyebrow">How we work</p>
-              <h2>Four clear phases from discovery to improvement.</h2>
+            <div class="section-title">
+              <span class="section-focus" aria-hidden="true"><i data-lucide="route"></i></span>
+              <div>
+                <p class="eyebrow">How we work</p>
+                <h2>Four clear phases from discovery to improvement.</h2>
+              </div>
             </div>
             <p>Every stage produces a concrete output, so your team always knows what is being decided and what comes next.</p>
           </div>
 
-          <div class="process-layout" data-reveal>
+          <div class="process-layout" data-reveal data-scene-visual>
             <div class="process-steps" role="tablist" aria-label="Development process">
               <button class="process-step is-active" type="button" role="tab" aria-selected="true" data-process="0">
                 <span>01</span><i data-lucide="search-check" aria-hidden="true"></i><strong>Discover</strong>
@@ -450,7 +483,10 @@
             </div>
 
             <div class="process-detail" aria-live="polite">
-              <div class="process-detail-index" data-process-index>01</div>
+              <div class="process-focus" aria-hidden="true">
+                <i data-lucide="search-check" data-process-icon></i>
+                <span class="process-detail-index" data-process-index>01</span>
+              </div>
               <div>
                 <p class="card-kicker" data-process-kicker>Consultation and analysis</p>
                 <h3 data-process-title>Understand the operation before defining the system.</h3>
@@ -467,12 +503,12 @@
         </div>
       </section>
 
-      <section class="industry-band" id="industries" aria-labelledby="industries-title">
+      <section class="industry-band" id="industries" aria-labelledby="industries-title" data-scene>
         <div class="shell industry-intro" data-reveal>
           <p class="eyebrow">Industry focus</p>
           <h2 id="industries-title">Built for teams with moving parts.</h2>
         </div>
-        <div class="industry-marquee" aria-label="Industries we serve">
+        <div class="industry-marquee" aria-label="Industries we serve" data-scene-visual>
           <div class="industry-track">
             <span><i data-lucide="store" aria-hidden="true"></i> Retail</span>
             <span><i data-lucide="truck" aria-hidden="true"></i> Distribution</span>
@@ -490,9 +526,10 @@
         </div>
       </section>
 
-      <section class="section about" id="about" data-section>
+      <section class="section about" id="about" data-section data-scene>
         <div class="shell about-grid">
           <div class="about-statement" data-reveal>
+            <span class="section-focus" aria-hidden="true"><i data-lucide="fingerprint"></i></span>
             <p class="eyebrow">About Nexora</p>
             <h2>Small enough to listen closely. Structured enough to deliver serious systems.</h2>
             <p>
@@ -503,24 +540,25 @@
             <a class="text-link" href="#contact"><span>Meet your project partner</span><i data-lucide="arrow-right" aria-hidden="true"></i></a>
           </div>
 
-          <div class="about-values" data-reveal>
-            <article><span>01</span><div><h3>Business clarity</h3><p>We ask what should improve before deciding what should be built.</p></div></article>
-            <article><span>02</span><div><h3>Useful innovation</h3><p>Modern technology earns its place by making real work better.</p></div></article>
-            <article><span>03</span><div><h3>Reliable ownership</h3><p>Decisions and progress stay clear from discovery through support.</p></div></article>
+          <div class="about-values" data-reveal data-scene-visual>
+            <article><span><i data-lucide="target"></i></span><div><h3>Business clarity</h3><p>We ask what should improve before deciding what should be built.</p></div></article>
+            <article><span><i data-lucide="sparkles"></i></span><div><h3>Useful innovation</h3><p>Modern technology earns its place by making real work better.</p></div></article>
+            <article><span><i data-lucide="handshake"></i></span><div><h3>Reliable ownership</h3><p>Decisions and progress stay clear from discovery through support.</p></div></article>
           </div>
         </div>
       </section>
 
-      <section class="section faq" id="faq" data-section>
+      <section class="section faq" id="faq" data-section data-scene>
         <div class="shell faq-grid">
           <div class="faq-intro" data-reveal>
+            <span class="section-focus" aria-hidden="true"><i data-lucide="circle-help"></i></span>
             <p class="eyebrow">Common questions</p>
             <h2>The practical details clients ask first.</h2>
             <p>Still comparing options? Start with a short consultation and leave with a clearer next step.</p>
             <a class="button button-secondary" href="#contact"><span>Ask your question</span><i data-lucide="arrow-right" aria-hidden="true"></i></a>
           </div>
 
-          <div class="accordion" data-accordion data-reveal>
+          <div class="accordion" data-accordion data-reveal data-scene-visual>
             <article class="accordion-item is-open">
               <h3>
                 <button type="button" aria-expanded="true">
@@ -561,9 +599,10 @@
         </div>
       </section>
 
-      <section class="contact" id="contact" data-section>
+      <section class="contact" id="contact" data-section data-scene>
         <div class="shell contact-grid">
           <div class="contact-copy" data-reveal>
+            <span class="section-focus section-focus-dark" aria-hidden="true"><i data-lucide="send"></i></span>
             <p class="eyebrow eyebrow-dark">Start a project</p>
             <h2>Tell us what needs to work better.</h2>
             <p>
@@ -581,7 +620,7 @@
             </div>
           </div>
 
-          <div class="inquiry-panel" data-reveal>
+          <div class="inquiry-panel" data-reveal data-scene-visual>
             <div class="form-heading">
               <div>
                 <p>Project inquiry</p>
@@ -741,9 +780,8 @@
     <footer class="site-footer">
       <div class="shell footer-main">
         <div class="footer-brand">
-          <a class="brand" href="#home" aria-label="Nexora Digital home">
+          <a class="brand" href="#home" aria-label="Home">
             <span class="brand-glyph" aria-hidden="true">N</span>
-            <span class="brand-name">NEXORA<span>.</span></span>
           </a>
           <p>Digital systems designed around real business operations.</p>
           <span>Surabaya, Indonesia</span>

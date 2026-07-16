@@ -50,6 +50,7 @@ const t = (source, parameters = {}) =>
   const backToTop = $("[data-back-top]");
   const floatingContact = $(".floating-contact");
   const toast = $("[data-toast]");
+  const sceneElements = $$('[data-scene]');
   let toastTimer;
 
   const showToast = (message, type = "info") => {
@@ -86,6 +87,20 @@ const t = (source, parameters = {}) =>
   });
 
   let scrollTicking = false;
+  const updateSceneProgress = () => {
+    const viewportCenter = window.innerHeight / 2;
+    sceneElements.forEach((section) => {
+      const bounds = section.getBoundingClientRect();
+      const sectionCenter = bounds.top + bounds.height / 2;
+      const range = Math.max(window.innerHeight, bounds.height) / 2;
+      const distance = Math.min(1, Math.abs(sectionCenter - viewportCenter) / range);
+      const progress = Math.min(1, Math.max(0, (viewportCenter - bounds.top) / Math.max(1, bounds.height)));
+      section.style.setProperty("--scene-progress", progress.toFixed(3));
+      section.style.setProperty("--scene-distance", distance.toFixed(3));
+      section.style.setProperty("--scene-shift", `${((0.5 - progress) * 34).toFixed(2)}px`);
+    });
+  };
+
   const updateScrollUI = () => {
     const scrollTop = window.scrollY;
     const scrollRange = document.documentElement.scrollHeight - window.innerHeight;
@@ -97,6 +112,7 @@ const t = (source, parameters = {}) =>
     header.classList.toggle("is-scrolled", scrollTop > 26);
     backToTop.classList.toggle("is-visible", scrollTop > 720 && !contactVisible);
     floatingContact.classList.toggle("is-visible", scrollTop > 560 && scrollRange - scrollTop > 620 && !contactVisible);
+    updateSceneProgress();
     scrollTicking = false;
   };
 
@@ -117,6 +133,7 @@ const t = (source, parameters = {}) =>
   const revealElements = $$('[data-reveal]');
   if (reduceMotion || !("IntersectionObserver" in window)) {
     revealElements.forEach((element) => element.classList.add("is-visible"));
+    sceneElements.forEach((element) => element.classList.add("is-scene-active"));
   } else {
     const revealObserver = new IntersectionObserver(
       (entries) => {
@@ -135,6 +152,14 @@ const t = (source, parameters = {}) =>
       { threshold: [0, 0.12], rootMargin: "-3% 0px -7%" }
     );
     revealElements.forEach((element) => revealObserver.observe(element));
+
+    const sceneObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => entry.target.classList.toggle("is-scene-active", entry.isIntersecting));
+      },
+      { threshold: [0.08, 0.24], rootMargin: "-8% 0px -8%" }
+    );
+    sceneElements.forEach((element) => sceneObserver.observe(element));
   }
 
   const navLinks = $$(".desktop-nav .nav-link");
@@ -157,6 +182,12 @@ const t = (source, parameters = {}) =>
 
   const hero = $(".hero");
   const heroMedia = $(".hero-media");
+  const productScene = $("[data-product-scene]");
+  if (productScene) {
+    import("./product-scene.js")
+      .then(({ initProductScene }) => initProductScene(productScene, { reduceMotion }))
+      .catch(() => {});
+  }
   if (!reduceMotion) {
     hero?.addEventListener("pointermove", (event) => {
       if (event.pointerType === "touch") return;
@@ -183,7 +214,33 @@ const t = (source, parameters = {}) =>
         card.style.transform = "";
       });
     });
+
+    $$('[data-depth-card]').forEach((card) => {
+      card.addEventListener("pointermove", (event) => {
+        const bounds = card.getBoundingClientRect();
+        const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+        const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+        card.style.setProperty("--card-tilt-x", `${(y * -5).toFixed(2)}deg`);
+        card.style.setProperty("--card-tilt-y", `${(x * 6).toFixed(2)}deg`);
+        card.style.setProperty("--card-light-x", `${((x + 0.5) * 100).toFixed(1)}%`);
+        card.style.setProperty("--card-light-y", `${((y + 0.5) * 100).toFixed(1)}%`);
+      });
+      card.addEventListener("pointerleave", () => {
+        card.style.setProperty("--card-tilt-x", "0deg");
+        card.style.setProperty("--card-tilt-y", "0deg");
+      });
+    });
   }
+
+  const replaceDynamicIcon = (selector, name) => {
+    const current = $(selector);
+    if (!current || !name) return;
+    const icon = document.createElement("i");
+    icon.dataset.lucide = name;
+    icon.setAttribute(selector.slice(1, -1), "");
+    icon.setAttribute("aria-hidden", "true");
+    current.replaceWith(icon);
+  };
 
   const serviceStage = $("[data-service-stage]");
   const renderServiceOfferings = (items) => {
@@ -214,6 +271,7 @@ const t = (source, parameters = {}) =>
       $("[data-service-kicker]").textContent = t(data.kicker);
       $("[data-service-title]").textContent = t(data.title);
       $("[data-service-description]").textContent = t(data.description);
+      replaceDynamicIcon("[data-service-icon]", data.icon);
       const cta = $("[data-service-cta]");
       cta.dataset.servicePick = data.service;
       $("span", cta).textContent = t(data.cta);
@@ -482,6 +540,8 @@ const t = (source, parameters = {}) =>
       $("[data-process-title]").textContent = t(data.title);
       $("[data-process-description]").textContent = t(data.description);
       $("[data-process-output]").textContent = t(data.output);
+      replaceDynamicIcon("[data-process-icon]", data.icon);
+      renderIcons();
       processDetail.classList.remove("is-changing");
     }, reduceMotion ? 0 : 160);
   };

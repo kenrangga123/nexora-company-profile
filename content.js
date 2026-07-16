@@ -31,6 +31,7 @@ export const uiText = {
 
 export const serviceData = {
   businessSystems: {
+    icon: "boxes",
     kicker: "Connected operations",
     title: "Run the business from one reliable operational core.",
     description: "Connect daily transactions, management visibility, and the systems that keep teams aligned.",
@@ -39,6 +40,7 @@ export const serviceData = {
     cta: "Discuss your business system"
   },
   customPlatforms: {
+    icon: "panels-top-left",
     kicker: "Built around your workflow",
     title: "Turn a specific process into software people can use clearly.",
     description: "Create focused internal tools, customer portals, and responsive platforms without off-the-shelf constraints.",
@@ -47,6 +49,7 @@ export const serviceData = {
     cta: "Explore a custom platform"
   },
   appliedAi: {
+    icon: "brain-circuit",
     kicker: "Practical intelligence",
     title: "Apply AI where it makes real work faster or more visible.",
     description: "Use grounded assistants, computer vision, and intelligent automation for a defined operational need.",
@@ -230,6 +233,7 @@ export const caseStudies = {
 export const processData = [
   {
     index: "01",
+    icon: "search-check",
     kicker: "Consultation and analysis",
     title: "Understand the operation before defining the system.",
     description: "We align on the goal, then map the people, data, handoffs, exceptions, and systems involved today.",
@@ -237,6 +241,7 @@ export const processData = [
   },
   {
     index: "02",
+    icon: "pen-tool",
     kicker: "Planning and design",
     title: "Define a responsible plan and a clear user experience.",
     description: "We shape scope, architecture, phases, integrations, key journeys, and interfaces around actual user roles.",
@@ -244,6 +249,7 @@ export const processData = [
   },
   {
     index: "03",
+    icon: "braces",
     kicker: "Development and quality assurance",
     title: "Build in visible increments and test real operating scenarios.",
     description: "Working milestones are reviewed and verified for functionality, permissions, data integrity, integrations, and responsiveness.",
@@ -251,6 +257,7 @@ export const processData = [
   },
   {
     index: "04",
+    icon: "rocket",
     kicker: "Launch and continuous improvement",
     title: "Go live with prepared users, then keep improving.",
     description: "We coordinate deployment, access, training, and handover, then maintain a clear rhythm for support and valuable iterations.",

@@ -42,6 +42,11 @@ test("the static server delivers the homepage with security headers", async (con
   assert.match(response.headers.get("content-security-policy"), /default-src 'self'/);
   assert.match(html, /Turn complex operations/);
 
+  const servicesResponse = await fetch(`http://127.0.0.1:${address.port}/services`);
+  const servicesHtml = await servicesResponse.text();
+  assert.equal(servicesResponse.status, 200);
+  assert.match(servicesHtml, /data-page="services"/);
+
   const invalidResponse = await fetch(`http://127.0.0.1:${address.port}/api/inquiry`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

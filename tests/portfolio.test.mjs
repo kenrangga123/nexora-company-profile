@@ -29,7 +29,7 @@ test("portfolio contains the four working prototypes and expected gallery counts
   }
 });
 
-test("density reduction keeps three service categories and four delivery phases", async () => {
+test("multi-page structure keeps focused services and delivery phases", async () => {
   assert.deepEqual(Object.keys(serviceData), ["businessSystems", "customPlatforms", "appliedAi"]);
   assert.equal(processData.length, 4);
   assert.deepEqual(processData.map((phase) => phase.index), ["01", "02", "03", "04"]);
@@ -47,9 +47,33 @@ test("density reduction keeps three service categories and four delivery phases"
     category.offerings.forEach((offering) => assert.ok(canonicalServices.has(offering)));
   }
 
+  const pages = {
+    home: "index.html",
+    services: "services.html",
+    "prototype-work": "prototype-work.html",
+    solutions: "solutions.html",
+    process: "process.html",
+    about: "about.html",
+    contact: "contact.html"
+  };
+
+  for (const [page, filename] of Object.entries(pages)) {
+    const html = await readFile(join(projectRoot, filename), "utf8");
+    assert.match(html, new RegExp(`data-page="${page}"`));
+    assert.match(html, /data-site-header/);
+    assert.match(html, /data-site-footer/);
+    assert.match(html, /<h1[\s>]/);
+  }
+
   const homepage = await readFile(join(projectRoot, "index.html"), "utf8");
-  const order = ["services", "work", "solutions", "process", "industries", "about", "faq", "contact"]
-    .map((id) => homepage.indexOf(`id="${id}"`));
-  assert.ok(order.every((position) => position >= 0));
-  assert.deepEqual(order, [...order].sort((a, b) => a - b));
+  assert.doesNotMatch(homepage, /id="services"|id="work"|id="solutions"|id="process"|id="about"|id="contact"/);
+  assert.match(homepage, /href="\/services"/);
+  assert.match(homepage, /href="\/prototype-work"/);
+
+  const workPage = await readFile(join(projectRoot, "prototype-work.html"), "utf8");
+  assert.equal((workPage.match(/data-project="/g) || []).length, 4);
+
+  const contactPage = await readFile(join(projectRoot, "contact.html"), "utf8");
+  assert.match(contactPage, /id="inquiry-form"/);
+  assert.doesNotMatch(homepage, /id="inquiry-form"/);
 });

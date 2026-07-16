@@ -286,7 +286,8 @@ const handleInquiry = async (request, response) => {
 };
 
 const serveStatic = async (request, response, pathname) => {
-  const requestedPath = pathname === "/" ? "/index.html" : pathname;
+  let requestedPath = pathname === "/" ? "/index.html" : pathname;
+  if (!extname(requestedPath) && !requestedPath.endsWith("/")) requestedPath = `${requestedPath}.html`;
   const extension = extname(requestedPath).toLowerCase();
   if (!mimeTypes[extension]) {
     sendJson(response, 404, { message: "Not found." });

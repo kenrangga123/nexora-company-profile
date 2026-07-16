@@ -3,4 +3,4 @@ Allow: /
 Disallow: /api/
 Disallow: /data/
 
-Sitemap: https://nexora.example/sitemap.xml
+Sitemap: https://nexora-company-profile-six.vercel.app/sitemap.xml

@@ -1,6 +1,18 @@
-# Nexora Interactive Company Profile
+# Digital Systems Multi-Page Portfolio
 
-A responsive company profile website for an ERP, custom software, AI, analytics, integration, and web-platform company. The project is dependency-free at runtime and includes a small Node server for static delivery and inquiry handling.
+A responsive multi-page company portfolio for ERP, custom software, AI, analytics, integration, and web-platform work. It includes a focused page for each primary client question, a Three.js product scene, and a Node server for local static delivery and inquiry handling.
+
+Production: `https://nexora-company-profile-six.vercel.app`
+
+Primary routes:
+
+- `/` — concise overview and navigation
+- `/services` — interactive service explorer
+- `/prototype-work` — filterable prototype gallery
+- `/solutions` — outcome explorer
+- `/process` — interactive delivery phases
+- `/about` — principles, industry fit, and FAQ
+- `/contact` — two-step project inquiry
 
 ## Run locally
 
@@ -84,17 +96,9 @@ node .\tests\visual-check.mjs
 
 The visual check uses the bundled Codex Playwright runtime when available and falls back to an installed Chrome or Edge browser.
 
-## Replace before launch
+## Business details
 
-The user did not provide final company details, so the following are intentional placeholders:
-
-- Brand: `Nexora Digital`
-- Domain and canonical URL: `https://nexora.example`
-- Email: `hello@nexora.example`
-- Location: `Surabaya, Indonesia`
-- Privacy and terms text
-
-Update the matching values in `index.html`, `privacy.html`, `terms.html`, `robots.txt`, `sitemap.xml`, and `site.webmanifest`. Add approved client logos and verified testimonials only after permission is confirmed.
+The current production alias is used for canonical URLs, robots, and sitemap entries. Replace it after a custom domain is connected. Confirm the final legal business name and governing terms before commercial contracting. Add client names, testimonials, links, or performance claims only after they are verified and approved for publication.
 
 ## Search and performance
 

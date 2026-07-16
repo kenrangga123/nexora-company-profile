@@ -5,6 +5,9 @@ import {
   solutionData as solutionContent,
   uiText
 } from "./content.js";
+import { mountSiteShell } from "./site-shell.js";
+
+mountSiteShell();
 
 const t = (source, parameters = {}) =>
   Object.entries(parameters).reduce(
@@ -16,7 +19,7 @@ const t = (source, parameters = {}) =>
   "use strict";
 
   const $ = (selector, context = document) => context.querySelector(selector);
-  const $$ = (selector, context = document) => [...context.querySelectorAll(selector)];
+  const $$ = (selector, context = document) => (context ? [...context.querySelectorAll(selector)] : []);
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const renderIcons = () => {
@@ -54,6 +57,7 @@ const t = (source, parameters = {}) =>
   let toastTimer;
 
   const showToast = (message, type = "info") => {
+    if (!toast) return;
     window.clearTimeout(toastTimer);
     toast.textContent = t(message);
     toast.classList.toggle("is-error", type === "error");
@@ -62,6 +66,7 @@ const t = (source, parameters = {}) =>
   };
 
   const setMenu = (open) => {
+    if (!header || !mobileMenu || !menuButton) return;
     document.body.classList.toggle("menu-open", open);
     header.classList.toggle("menu-visible", open);
     mobileMenu.classList.toggle("is-open", open);
@@ -106,12 +111,12 @@ const t = (source, parameters = {}) =>
     const scrollRange = document.documentElement.scrollHeight - window.innerHeight;
     const progress = scrollRange > 0 ? scrollTop / scrollRange : 0;
     const contactSection = $("#contact");
-    const contactBounds = contactSection.getBoundingClientRect();
-    const contactVisible = contactBounds.top < window.innerHeight && contactBounds.bottom > 0;
-    progressBar.style.transform = `scaleX(${Math.min(1, Math.max(0, progress))})`;
-    header.classList.toggle("is-scrolled", scrollTop > 26);
-    backToTop.classList.toggle("is-visible", scrollTop > 720 && !contactVisible);
-    floatingContact.classList.toggle("is-visible", scrollTop > 560 && scrollRange - scrollTop > 620 && !contactVisible);
+    const contactBounds = contactSection?.getBoundingClientRect();
+    const contactVisible = contactBounds ? contactBounds.top < window.innerHeight && contactBounds.bottom > 0 : false;
+    if (progressBar) progressBar.style.transform = `scaleX(${Math.min(1, Math.max(0, progress))})`;
+    header?.classList.toggle("is-scrolled", scrollTop > 26);
+    backToTop?.classList.toggle("is-visible", scrollTop > 720 && !contactVisible);
+    floatingContact?.classList.toggle("is-visible", scrollTop > 360 && scrollRange - scrollTop > 360 && !contactVisible);
     updateSceneProgress();
     scrollTicking = false;
   };
@@ -162,7 +167,7 @@ const t = (source, parameters = {}) =>
     sceneElements.forEach((element) => sceneObserver.observe(element));
   }
 
-  const navLinks = $$(".desktop-nav .nav-link");
+  const navLinks = $$(".desktop-nav .nav-link").filter((link) => link.getAttribute("href")?.startsWith("#"));
   const navTargets = $$('[data-section][id]');
   if ("IntersectionObserver" in window) {
     const activeSectionObserver = new IntersectionObserver(
@@ -194,11 +199,11 @@ const t = (source, parameters = {}) =>
       const bounds = hero.getBoundingClientRect();
       const x = (event.clientX - bounds.left) / bounds.width - 0.5;
       const y = (event.clientY - bounds.top) / bounds.height - 0.5;
-      heroMedia.style.transform = `scale(1.055) translate3d(${x * -8}px, ${y * -6}px, 0)`;
+      if (heroMedia) heroMedia.style.transform = `scale(1.055) translate3d(${x * -8}px, ${y * -6}px, 0)`;
     });
 
     hero?.addEventListener("pointerleave", () => {
-      heroMedia.style.transform = "";
+      if (heroMedia) heroMedia.style.transform = "";
     });
   }
 
@@ -274,6 +279,7 @@ const t = (source, parameters = {}) =>
       replaceDynamicIcon("[data-service-icon]", data.icon);
       const cta = $("[data-service-cta]");
       cta.dataset.servicePick = data.service;
+      cta.href = `/contact?service=${encodeURIComponent(data.service)}`;
       $("span", cta).textContent = t(data.cta);
       renderServiceOfferings(data.offerings);
       renderIcons();
@@ -422,7 +428,9 @@ const t = (source, parameters = {}) =>
     renderCaseCopy(data);
     buildCaseThumbnails(data.images);
     renderCaseImage(0);
-    $("[data-case-cta]").dataset.servicePick = data.service;
+    const caseCta = $("[data-case-cta]");
+    caseCta.dataset.servicePick = data.service;
+    caseCta.href = `/contact?service=${encodeURIComponent(data.service)}`;
     caseDialog.showModal();
     document.body.classList.add("dialog-open");
     $("[data-close-case]").focus();
@@ -469,7 +477,7 @@ const t = (source, parameters = {}) =>
   });
 
   const closeCase = () => {
-    if (caseDialog.open) caseDialog.close();
+    if (caseDialog?.open) caseDialog.close();
   };
 
   $("[data-close-case]")?.addEventListener("click", closeCase);
@@ -486,9 +494,6 @@ const t = (source, parameters = {}) =>
     if (!inside) closeCase();
   });
   $("[data-case-cta]")?.addEventListener("click", (event) => {
-    const value = event.currentTarget.dataset.servicePick;
-    const serviceField = $("#inquiry-form")?.elements.service;
-    if (value && serviceField) serviceField.value = value;
     caseOpener = null;
     closeCase();
   });
@@ -522,7 +527,7 @@ const t = (source, parameters = {}) =>
       applyProjectFilter(filterButtons[nextIndex]);
     });
   });
-  applyProjectFilter($("[data-filter].is-active") || filterButtons[0]);
+  if (filterButtons.length) applyProjectFilter($("[data-filter].is-active") || filterButtons[0]);
 
   const processDetail = $(".process-detail");
   const setProcess = (index, button) => {
@@ -614,7 +619,7 @@ const t = (source, parameters = {}) =>
       element.classList.toggle("is-active", active);
     });
     formProgressItems.forEach((item) => item.classList.toggle("is-active", Number(item.dataset.progress) <= step));
-    formProgressLine.style.transform = `scaleX(${step === 2 ? 1 : 0})`;
+    if (formProgressLine) formProgressLine.style.transform = `scaleX(${step === 2 ? 1 : 0})`;
   };
 
   const fieldMessage = (input) => {
@@ -723,6 +728,7 @@ const t = (source, parameters = {}) =>
   }
 
   const restoreDraft = () => {
+    if (!inquiryForm) return;
     try {
       const draft = JSON.parse(localStorage.getItem(draftKey));
       if (!draft) return;
@@ -743,6 +749,12 @@ const t = (source, parameters = {}) =>
   };
 
   restoreDraft();
+
+  const requestedService = new URLSearchParams(window.location.search).get("service");
+  if (requestedService && serviceSelect && [...serviceSelect.options].some((option) => option.value === requestedService)) {
+    serviceSelect.value = requestedService;
+    saveDraft();
+  }
 
   $$('[data-service-pick]').forEach((link) => {
     link.addEventListener("click", () => {
@@ -838,5 +850,5 @@ const t = (source, parameters = {}) =>
     inquiryForm.elements.name.focus();
   });
 
-  $("[data-current-year]").textContent = String(new Date().getFullYear());
+  $("[data-current-year]")?.replaceChildren(String(new Date().getFullYear()));
 })();

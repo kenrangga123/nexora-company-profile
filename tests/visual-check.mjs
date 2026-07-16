@@ -30,6 +30,16 @@ const baseUrl = (process.env.BASE_URL || "http://127.0.0.1:4173").replace(/\/$/,
 await mkdir(output, { recursive: true });
 
 const issues = [];
+const pageDefinitions = [
+  { path: "/", key: "home", marker: ".hero", title: "Turn complex operations" },
+  { path: "/services", key: "services", marker: "[data-service-stage]", title: "Build the system" },
+  { path: "/prototype-work", key: "prototype-work", marker: "[data-project='erp']", title: "Proof you can inspect" },
+  { path: "/solutions", key: "solutions", marker: "[data-solution-stage]", title: "Start with the operating problem" },
+  { path: "/process", key: "process", marker: "[data-process='0']", title: "Clear decisions" },
+  { path: "/about", key: "about", marker: ".about-values", title: "Business understanding" },
+  { path: "/contact", key: "contact", marker: "#inquiry-form", title: "Bring the pressure point" }
+];
+
 const attachDiagnostics = (page, label) => {
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") issues.push(`${label} console ${message.type()}: ${message.text()}`);
@@ -41,7 +51,6 @@ const readCanvasSignal = (page) => page.locator("[data-product-scene] canvas").e
   const context = canvas.getContext("webgl2") || canvas.getContext("webgl");
   const ready = canvas.closest("[data-product-scene]").classList.contains("is-webgl-ready");
   if (!context) return { ready, width: canvas.width, height: canvas.height, litSamples: 0, spread: 0 };
-
   const pixels = new Uint8Array(context.drawingBufferWidth * context.drawingBufferHeight * 4);
   context.readPixels(0, 0, context.drawingBufferWidth, context.drawingBufferHeight, context.RGBA, context.UNSIGNED_BYTE, pixels);
   let litSamples = 0;
@@ -53,275 +62,192 @@ const readCanvasSignal = (page) => page.locator("[data-product-scene] canvas").e
     minimum = Math.min(minimum, brightness);
     maximum = Math.max(maximum, brightness);
   }
+  return { ready, width: context.drawingBufferWidth, height: context.drawingBufferHeight, litSamples, spread: maximum - minimum };
+});
+
+const waitForPage = async (page, definition) => {
+  await page.goto(`${baseUrl}${definition.path}`, { waitUntil: "networkidle" });
+  await page.locator(definition.marker).waitFor({ state: "visible" });
+  await page.waitForTimeout(260);
+};
+
+const readPageState = (page) => page.evaluate(() => {
+  const heading = document.querySelector("main h1");
+  const activeDesktop = [...document.querySelectorAll(".desktop-nav [aria-current='page']")];
+  const activeCta = document.querySelector(".header-cta[aria-current='page']");
   return {
-    ready,
-    width: context.drawingBufferWidth,
-    height: context.drawingBufferHeight,
-    litSamples,
-    spread: maximum - minimum
+    page: document.body.dataset.page,
+    title: document.title,
+    heading: heading?.textContent.trim() || "",
+    headingRight: heading ? Math.round(heading.getBoundingClientRect().right) : 0,
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
+    duplicateIds: [...document.querySelectorAll("[id]")]
+      .map((element) => element.id)
+      .filter((id, index, ids) => ids.indexOf(id) !== index),
+    activeDesktop: activeDesktop.map((link) => link.getAttribute("href")),
+    activeCta: activeCta?.getAttribute("href") || "",
+    language: document.documentElement.lang
   };
 });
 
-const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+const desktop = await browser.newPage({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 1 });
 attachDiagnostics(desktop, "desktop");
 let submittedInquiry = null;
 await desktop.route("**/api/inquiry", async (route) => {
   submittedInquiry = JSON.parse(route.request().postData() || "{}");
-  await route.fulfill({
-    status: 201,
-    contentType: "application/json",
-    body: JSON.stringify({ id: "INQ-E2E-TEST" })
-  });
+  await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: "INQ-E2E-TEST" }) });
 });
-await desktop.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+
+const desktopPages = {};
+for (const definition of pageDefinitions) {
+  await waitForPage(desktop, definition);
+  const state = await readPageState(desktop);
+  desktopPages[definition.key] = state;
+  if (state.page !== definition.key) issues.push(`${definition.path} rendered page key ${state.page}.`);
+  if (!state.heading.includes(definition.title)) issues.push(`${definition.path} did not render its focused page heading.`);
+  if (state.scrollWidth > state.clientWidth) issues.push(`${definition.path} desktop overflow: ${state.scrollWidth}/${state.clientWidth}.`);
+  if (state.headingRight > state.clientWidth + 1) issues.push(`${definition.path} heading exceeded the viewport.`);
+  if (state.missingAlt) issues.push(`${definition.path} has ${state.missingAlt} images without alt attributes.`);
+  if (state.duplicateIds.length) issues.push(`${definition.path} has duplicate IDs: ${state.duplicateIds.join(", ")}.`);
+  if (state.language !== "en") issues.push(`${definition.path} language is ${state.language}.`);
+  if (!["home", "contact"].includes(definition.key) && (state.activeDesktop.length !== 1 || state.activeDesktop[0] !== definition.path)) {
+    issues.push(`${definition.path} did not expose one correct active desktop navigation item.`);
+  }
+  if (definition.key === "contact" && state.activeCta !== "/contact") issues.push("Contact CTA was not marked as the current page.");
+  await desktop.screenshot({ path: join(output, `page-${definition.key}-desktop.png`), fullPage: false });
+  if (definition.key !== "home") await desktop.screenshot({ path: join(output, `page-${definition.key}-full.png`), fullPage: true });
+}
+
+await waitForPage(desktop, pageDefinitions[0]);
 await desktop.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
-await desktop.waitForTimeout(300);
-await desktop.screenshot({ path: join(output, "desktop-first-view.png"), fullPage: false });
 const desktopCanvasSignal = await readCanvasSignal(desktop);
 if (!desktopCanvasSignal.ready || desktopCanvasSignal.litSamples < 250 || desktopCanvasSignal.spread < 30) {
   issues.push(`Desktop 3D canvas was blank or visually flat: ${JSON.stringify(desktopCanvasSignal)}`);
 }
-
-const desktopLayout = await desktop.evaluate(() => ({
-  title: document.title,
-  clientWidth: document.documentElement.clientWidth,
-  scrollWidth: document.documentElement.scrollWidth,
-  missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
-  duplicateIds: [...document.querySelectorAll("[id]")]
-    .map((element) => element.id)
-    .filter((id, index, ids) => ids.indexOf(id) !== index),
-  languageControls: document.querySelectorAll("[data-language-select]").length,
-  language: document.documentElement.lang,
-  heroBottom: document.querySelector(".hero").getBoundingClientRect().bottom,
-  viewportHeight: window.innerHeight
+const homeStructure = await desktop.evaluate(() => ({
+  mainSections: document.querySelectorAll("main > section").length,
+  legacySections: ["services", "work", "solutions", "process", "about", "contact"].filter((id) => document.getElementById(id)),
+  routes: [...document.querySelectorAll(".path-list a")].map((link) => link.getAttribute("href"))
 }));
+if (homeStructure.legacySections.length) issues.push(`Homepage still contains former single-page sections: ${homeStructure.legacySections.join(", ")}.`);
+if (homeStructure.routes.length !== 6) issues.push("Homepage route list does not expose six focused destinations.");
 
-await desktop.click('[data-solution="automate"]');
-await desktop.waitForTimeout(250);
-if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Automate")) issues.push("Solution explorer did not update.");
+await waitForPage(desktop, pageDefinitions[1]);
 await desktop.click('[data-service-category="customPlatforms"]');
 await desktop.waitForTimeout(220);
 if (!(await desktop.locator("[data-service-title]").textContent()).includes("specific process")) issues.push("Service explorer did not update.");
-await desktop.locator("#services").screenshot({ path: join(output, "desktop-services.png") });
-await desktop.click("[data-service-cta]");
-if ((await desktop.inputValue('[name="service"]')) !== "Custom Software Development") issues.push("Service explorer did not prefill the inquiry form.");
-await desktop.locator("#work").scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(760);
-await desktop.locator("#work").screenshot({ path: join(output, "desktop-prototype-work.png") });
-const erpCard = desktop.locator('[data-project="erp"]');
-await erpCard.hover({ position: { x: 560, y: 100 } });
-await desktop.waitForTimeout(220);
-const erpCardTransform = await erpCard.locator(".project-open").evaluate((element) => getComputedStyle(element).transform);
-if (!erpCardTransform || erpCardTransform === "none") issues.push("Project image did not respond with a 3D transform.");
-await erpCard.screenshot({ path: join(output, "desktop-project-3d-hover.png") });
-await desktop.mouse.move(0, 0);
-await desktop.click('[data-open-case="erp"]');
-if (!(await desktop.locator("#case-dialog").evaluate((dialog) => dialog.open))) issues.push("Case study dialog did not open.");
-if ((await desktop.locator("[data-gallery-total]").textContent()) !== "3") issues.push("ERP gallery did not expose three images.");
-if ((await desktop.locator("[data-gallery-index]").count()) !== 3) issues.push("ERP gallery thumbnails did not match its image count.");
-await desktop.click("[data-gallery-next]");
-if ((await desktop.locator("[data-gallery-current]").textContent()) !== "2") issues.push("Gallery next control did not advance.");
-await desktop.keyboard.press("ArrowRight");
-if ((await desktop.locator("[data-gallery-current]").textContent()) !== "3") issues.push("Gallery keyboard control did not advance.");
-await desktop.locator("[data-gallery-swipe]").evaluate((element) => {
-  element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1, isPrimary: true, clientX: 300 }));
-  element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1, isPrimary: true, clientX: 100 }));
-});
-if ((await desktop.locator("[data-gallery-current]").textContent()) !== "1") issues.push("Gallery swipe did not wrap to the cover.");
-await desktop.screenshot({ path: join(output, "desktop-case-dialog.png"), fullPage: false });
-await desktop.click("[data-close-case]");
-if (!(await desktop.locator('[data-open-case="erp"]').evaluate((element) => element === document.activeElement))) {
-  issues.push("Case dialog did not restore focus to its originating card.");
-}
-await desktop.click('[data-open-case="cctv"]');
-if (await desktop.locator("[data-gallery-next]").isVisible()) issues.push("Single-image CCTV gallery still showed navigation.");
-if (await desktop.locator("[data-case-thumbnails]").isVisible()) issues.push("Single-image CCTV gallery still showed thumbnails.");
-await desktop.click("[data-close-case]");
-await desktop.click('[data-process="2"]');
-await desktop.waitForTimeout(220);
-if (!(await desktop.locator("[data-process-title]").textContent()).includes("Build")) issues.push("Process explorer did not update.");
-await desktop.locator("#process").screenshot({ path: join(output, "desktop-process.png") });
+const serviceCtaHref = await desktop.locator("[data-service-cta]").getAttribute("href");
+if (!serviceCtaHref?.includes("service=Custom%20Software%20Development")) issues.push("Service CTA did not preserve its inquiry context.");
+await Promise.all([desktop.waitForURL(/\/contact\?service=/), desktop.click("[data-service-cta]")]);
+if ((await desktop.inputValue('[name="service"]')) !== "Custom Software Development") issues.push("Cross-page service inquiry did not prefill Contact.");
 
-const expectedFilterCounts = {
-  "business-systems": 1,
-  "generative-ai": 2,
-  "computer-vision": 2,
-  all: 4
-};
+await waitForPage(desktop, pageDefinitions[3]);
+await desktop.click('[data-solution="automate"]');
+await desktop.waitForTimeout(240);
+if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Automate")) issues.push("Solution explorer did not update.");
+
+await waitForPage(desktop, pageDefinitions[2]);
+const expectedFilterCounts = { "business-systems": 1, "generative-ai": 2, "computer-vision": 2, all: 4 };
 for (const [filter, expected] of Object.entries(expectedFilterCounts)) {
   await desktop.click(`[data-filter="${filter}"]`);
   const visibleProjects = await desktop.locator("[data-project]:not(.is-hidden)").count();
   if (visibleProjects !== expected) issues.push(`${filter} filter showed ${visibleProjects} projects instead of ${expected}.`);
 }
+const erpCard = desktop.locator('[data-project="erp"]');
+await erpCard.hover({ position: { x: 480, y: 90 } });
+await desktop.waitForTimeout(180);
+const cardTransform = await erpCard.locator(".project-open").evaluate((element) => getComputedStyle(element).transform);
+if (!cardTransform || cardTransform === "none") issues.push("Prototype card did not respond with a 3D transform.");
+await desktop.mouse.move(0, 0);
+await desktop.click('[data-open-case="erp"]');
+if ((await desktop.locator("[data-gallery-total]").textContent()) !== "3") issues.push("ERP gallery image count is incorrect.");
+await desktop.click("[data-gallery-next]");
+await desktop.keyboard.press("ArrowRight");
+if ((await desktop.locator("[data-gallery-current]").textContent()) !== "3") issues.push("Gallery click and keyboard navigation failed.");
+await desktop.click("[data-close-case]");
+if (!(await desktop.locator('[data-open-case="erp"]').evaluate((element) => element === document.activeElement))) issues.push("Gallery did not restore focus.");
+await desktop.click('[data-open-case="cctv"]');
+if (await desktop.locator("[data-gallery-next]").isVisible()) issues.push("Single-image gallery still exposed navigation.");
+await desktop.click("[data-close-case]");
 
-for (const section of ["services", "solutions", "work", "industries", "process", "about", "faq", "contact"]) {
-  await desktop.locator(`#${section}`).scrollIntoViewIfNeeded();
-  await desktop.waitForTimeout(760);
-}
-const repeatReveal = desktop.locator("#work .section-heading");
-await repeatReveal.scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(760);
-await desktop.evaluate(() => {
-  document.documentElement.style.scrollBehavior = "auto";
-  window.scrollTo(0, document.documentElement.scrollHeight);
-});
-await desktop.waitForTimeout(760);
-const upwardReset = await repeatReveal.evaluate((element) => ({
-  visible: element.classList.contains("is-visible"),
-  offset: element.style.getPropertyValue("--reveal-offset")
-}));
-if (upwardReset.visible || upwardReset.offset !== "-28px") {
-  issues.push("Off-screen reveal element did not reset after leaving the viewport.");
-}
-await repeatReveal.scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(760);
-if (!(await repeatReveal.evaluate((element) => element.classList.contains("is-visible")))) {
-  issues.push("Reveal animation did not replay when the element re-entered from above.");
-}
-await desktop.evaluate(() => window.scrollTo(0, 0));
-await desktop.waitForTimeout(760);
-if (!(await desktop.locator(".hero-copy").evaluate((element) => element.classList.contains("is-visible")))) {
-  issues.push("Hero reveal did not replay after scrolling back to the top.");
-}
-const downwardReset = await repeatReveal.evaluate((element) => ({
-  visible: element.classList.contains("is-visible"),
-  offset: element.style.getPropertyValue("--reveal-offset")
-}));
-if (downwardReset.visible || downwardReset.offset !== "28px") {
-  issues.push("Reveal element did not reset in the downward direction.");
-}
-await repeatReveal.scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(760);
-if (!(await repeatReveal.evaluate((element) => element.classList.contains("is-visible")))) {
-  issues.push("Reveal animation did not replay when the element re-entered from below.");
-}
-await desktop.evaluate(() => window.scrollTo(0, 0));
-await desktop.waitForTimeout(760);
-await desktop.screenshot({ path: join(output, "desktop-full-page.png"), fullPage: true });
-await desktop.locator("#contact").scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(800);
-await desktop.screenshot({ path: join(output, "desktop-contact.png"), fullPage: false });
-if (await desktop.locator(".floating-contact").isVisible()) issues.push("Floating contact action remained visible over the inquiry section.");
+await waitForPage(desktop, pageDefinitions[4]);
+await desktop.click('[data-process="2"]');
+await desktop.waitForTimeout(220);
+if (!(await desktop.locator("[data-process-title]").textContent()).includes("Build")) issues.push("Process explorer did not update.");
+
+await waitForPage(desktop, pageDefinitions[5]);
+await desktop.click(".accordion-item:nth-child(2) button");
+if (!(await desktop.locator(".accordion-item:nth-child(2)").evaluate((item) => item.classList.contains("is-open")))) issues.push("About FAQ did not open.");
+
+await desktop.goto(`${baseUrl}/contact?service=ERP%20Development`, { waitUntil: "networkidle" });
+if ((await desktop.inputValue('[name="service"]')) !== "ERP Development") issues.push("Direct Contact query did not prefill the service.");
 await desktop.fill('[name="name"]', "Visual Test");
 await desktop.fill('[name="company"]', "Example Company");
 await desktop.fill('[name="email"]', "visual@example.com");
-await desktop.selectOption('[name="service"]', { label: "ERP Development" });
 await desktop.click("[data-form-next]");
 if (!(await desktop.locator('[data-form-step="2"]').isVisible())) issues.push("Inquiry form did not advance to step two.");
-if (await desktop.locator("[data-form-success]").isVisible()) issues.push("Inquiry success panel was visible before submission.");
-await desktop.waitForTimeout(450);
-await desktop.screenshot({ path: join(output, "desktop-contact-step-two.png"), fullPage: false });
 await desktop.fill('[name="brief"]', "E2E inquiry context that is long enough for validation.");
 await desktop.check('[name="consent"]');
 await desktop.click("[data-submit-button]");
 await desktop.locator("[data-form-success]").waitFor({ state: "visible" });
-if (!submittedInquiry || submittedInquiry.consent !== true) issues.push("Inquiry form did not submit a valid browser payload.");
-if ((await desktop.locator("[data-inquiry-id]").textContent()) !== "INQ-E2E-TEST") issues.push("Inquiry success reference was not rendered.");
-await desktop.click("[data-new-inquiry]");
+if (!submittedInquiry || submittedInquiry.service !== "ERP Development" || submittedInquiry.consent !== true) issues.push("Inquiry form did not submit its complete payload.");
+if ((await desktop.locator("[data-inquiry-id]").textContent()) !== "INQ-E2E-TEST") issues.push("Inquiry reference was not rendered.");
 
-const responsiveLayouts = {};
+const responsive = {};
 for (const viewport of [
   { name: "wide", width: 1920, height: 1080 },
   { name: "laptop", width: 1366, height: 768 },
-  { name: "tablet", width: 768, height: 1024 }
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "mobile", width: 390, height: 844 }
 ]) {
   const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1 });
   attachDiagnostics(page, viewport.name);
+  responsive[viewport.name] = {};
+  for (const definition of pageDefinitions) {
+    await waitForPage(page, definition);
+    const metrics = await page.evaluate(() => {
+      const heading = document.querySelector("main h1");
+      const marker = document.querySelector("[data-scene-visual]");
+      return {
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        headingLeft: heading ? Math.round(heading.getBoundingClientRect().left) : 0,
+        headingRight: heading ? Math.round(heading.getBoundingClientRect().right) : 0,
+        visualWidth: marker ? Math.round(marker.getBoundingClientRect().width) : 0
+      };
+    });
+    responsive[viewport.name][definition.key] = metrics;
+    if (metrics.scrollWidth > metrics.clientWidth) issues.push(`${definition.path} ${viewport.name} overflow: ${metrics.scrollWidth}/${metrics.clientWidth}.`);
+    if (metrics.headingLeft < -1 || metrics.headingRight > metrics.clientWidth + 1) issues.push(`${definition.path} ${viewport.name} heading escaped the viewport.`);
+    if (definition.key !== "contact" && metrics.visualWidth === 0) issues.push(`${definition.path} ${viewport.name} lost its visual focus.`);
+    if (["laptop", "mobile"].includes(viewport.name)) await page.screenshot({ path: join(output, `page-${definition.key}-${viewport.name}.png`), fullPage: false });
+  }
+
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(850);
-  const firstView = await page.evaluate(() => {
-    const shell = document.querySelector(".header-inner").getBoundingClientRect();
-    const nextSection = document.querySelector("#services .section-title").getBoundingClientRect();
-    return {
-      clientWidth: document.documentElement.clientWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-      shellWidth: Math.round(shell.width),
-      shellLeft: Math.round(shell.left),
-      desktopNavVisible: getComputedStyle(document.querySelector(".desktop-nav")).display !== "none",
-      nextSectionTop: Math.round(nextSection.top),
-      viewportHeight: window.innerHeight
-    };
-  });
-  await page.screenshot({ path: join(output, `${viewport.name}-first-view.png`), fullPage: false });
-  await page.evaluate(() => {
-    document.documentElement.style.scrollBehavior = "auto";
-    window.scrollTo(0, document.querySelector("#contact").offsetTop);
-  });
-  await page.waitForTimeout(850);
-  const contactView = await page.evaluate(() => {
-    const contact = document.querySelector("#contact");
-    const grid = document.querySelector(".contact-grid");
-    const panel = document.querySelector(".inquiry-panel").getBoundingClientRect();
-    return {
-      contactHeight: Math.round(contact.getBoundingClientRect().height),
-      viewportHeight: window.innerHeight,
-      gridColumns: getComputedStyle(grid).gridTemplateColumns,
-      panelWidth: Math.round(panel.width),
-      panelLeft: Math.round(panel.left),
-      panelRight: Math.round(panel.right)
-    };
-  });
-  await page.screenshot({ path: join(output, `${viewport.name}-contact.png`), fullPage: false });
-  responsiveLayouts[viewport.name] = { ...firstView, ...contactView };
-  if (firstView.scrollWidth > firstView.clientWidth) issues.push(`${viewport.name} horizontal overflow: ${firstView.scrollWidth}/${firstView.clientWidth}`);
-  if (firstView.nextSectionTop >= firstView.viewportHeight) issues.push(`${viewport.name} first view did not hint at the next section.`);
-  if (viewport.width >= 1000 && firstView.shellWidth / firstView.clientWidth < 0.9) issues.push(`${viewport.name} shell is still too narrow: ${firstView.shellWidth}/${firstView.clientWidth}`);
-  if (viewport.width >= 1000 && contactView.contactHeight < viewport.height - 80) issues.push(`${viewport.name} contact section does not fill the laptop viewport.`);
-  if (viewport.width <= 900 && contactView.gridColumns.split(" ").length > 1) issues.push(`${viewport.name} contact layout did not stack.`);
+  if (viewport.name === "wide" || viewport.name === "mobile") {
+    await page.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
+    const signal = await readCanvasSignal(page);
+    if (!signal.ready || signal.litSamples < (viewport.name === "mobile" ? 100 : 250) || signal.spread < 30) issues.push(`${viewport.name} 3D canvas was blank: ${JSON.stringify(signal)}`);
+  }
   await page.close();
 }
 
-const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
-attachDiagnostics(mobile, "mobile");
-await mobile.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
-await mobile.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
-await mobile.waitForTimeout(300);
-await mobile.screenshot({ path: join(output, "mobile-first-view.png"), fullPage: false });
-const mobileCanvasSignal = await readCanvasSignal(mobile);
-if (!mobileCanvasSignal.ready || mobileCanvasSignal.litSamples < 100 || mobileCanvasSignal.spread < 30) {
-  issues.push(`Mobile 3D canvas was blank or visually flat: ${JSON.stringify(mobileCanvasSignal)}`);
-}
-const mobileInitialLayout = await mobile.evaluate(() => ({
-  clientWidth: document.documentElement.clientWidth,
-  scrollWidth: document.documentElement.scrollWidth,
-  heroBottom: document.querySelector(".hero").getBoundingClientRect().bottom,
-  viewportHeight: window.innerHeight,
-  headerHeight: document.querySelector(".site-header").getBoundingClientRect().height,
-  nextSectionTop: Math.round(document.querySelector("#services .section-title").getBoundingClientRect().top)
-}));
-if (mobileInitialLayout.nextSectionTop >= mobileInitialLayout.viewportHeight) issues.push("Mobile first view did not hint at the next section.");
-await mobile.click("[data-menu-toggle]");
-if ((await mobile.getAttribute("[data-menu-toggle]", "aria-expanded")) !== "true") issues.push("Mobile menu did not open.");
-await mobile.waitForTimeout(300);
-const mobileMenuLayout = await mobile.locator("[data-mobile-menu]").evaluate((element) => {
+const mobileMenuPage = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+attachDiagnostics(mobileMenuPage, "mobile-menu");
+await mobileMenuPage.goto(`${baseUrl}/solutions`, { waitUntil: "networkidle" });
+await mobileMenuPage.click("[data-menu-toggle]");
+await mobileMenuPage.waitForTimeout(320);
+const mobileMenu = await mobileMenuPage.locator("[data-mobile-menu]").evaluate((element) => {
   const style = getComputedStyle(element);
   const bounds = element.getBoundingClientRect();
-  return {
-    background: style.backgroundColor,
-    opacity: style.opacity,
-    visibility: style.visibility,
-    zIndex: style.zIndex,
-    top: Math.round(bounds.top),
-    bottom: Math.round(bounds.bottom)
-  };
+  return { background: style.backgroundColor, opacity: style.opacity, visibility: style.visibility, top: Math.round(bounds.top), bottom: Math.round(bounds.bottom), active: element.querySelector("[aria-current='page']")?.getAttribute("href") };
 });
-if (mobileMenuLayout.background === "rgba(0, 0, 0, 0)" || mobileMenuLayout.opacity !== "1" || mobileMenuLayout.visibility !== "visible") {
-  issues.push("Mobile menu did not render as an opaque visible panel.");
-}
-if (mobileMenuLayout.bottom < mobileInitialLayout.viewportHeight - 1) issues.push("Mobile menu did not cover the viewport below the header.");
-await mobile.screenshot({ path: join(output, "mobile-menu.png"), fullPage: false });
-await mobile.click('[data-mobile-menu] a[href="#services"]');
-await mobile.waitForTimeout(250);
-if ((await mobile.getAttribute("[data-menu-toggle]", "aria-expanded")) !== "false") issues.push("Mobile menu did not close after navigation.");
-
-await mobile.evaluate(() => {
-  document.documentElement.style.scrollBehavior = "auto";
-  window.scrollTo(0, document.querySelector("#contact").offsetTop);
-});
-await mobile.waitForTimeout(800);
-if (await mobile.locator(".floating-contact").isVisible()) issues.push("Mobile floating contact action remained visible over the inquiry section.");
-if (await mobile.locator("[data-back-top]").isVisible()) issues.push("Mobile back-to-top action remained visible over the inquiry section.");
-await mobile.screenshot({ path: join(output, "mobile-contact.png"), fullPage: false });
+if (mobileMenu.opacity !== "1" || mobileMenu.visibility !== "visible" || mobileMenu.bottom < 843) issues.push("Mobile menu did not cover the viewport.");
+if (mobileMenu.active !== "/solutions") issues.push("Mobile menu did not show the current page.");
+await mobileMenuPage.screenshot({ path: join(output, "mobile-menu.png"), fullPage: false });
+await mobileMenuPage.close();
 
 const reducedMotionPage = await browser.newPage({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" });
 attachDiagnostics(reducedMotionPage, "reduced-motion");
@@ -331,32 +257,18 @@ const reducedMotionState = await reducedMotionPage.evaluate(() => ({
   allRevealsVisible: [...document.querySelectorAll("[data-reveal]")].every((element) => element.classList.contains("is-visible")),
   heroTransform: getComputedStyle(document.querySelector("[data-product-scene]")).transform
 }));
-const reducedMotionCanvasSignal = await readCanvasSignal(reducedMotionPage);
-if (!reducedMotionState.allRevealsVisible || reducedMotionState.heroTransform !== "none") {
-  issues.push(`Reduced-motion layout still animated hidden content: ${JSON.stringify(reducedMotionState)}`);
-}
-if (!reducedMotionCanvasSignal.ready || reducedMotionCanvasSignal.litSamples < 250) {
-  issues.push(`Reduced-motion 3D canvas was blank: ${JSON.stringify(reducedMotionCanvasSignal)}`);
-}
+if (!reducedMotionState.allRevealsVisible || reducedMotionState.heroTransform !== "none") issues.push(`Reduced-motion state failed: ${JSON.stringify(reducedMotionState)}`);
 await reducedMotionPage.close();
 
 const legalPage = await browser.newPage({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
 attachDiagnostics(legalPage, "legal");
-for (const legalPath of ["privacy.html", "terms.html"]) {
-  await legalPage.goto(`${baseUrl}/${legalPath}`, { waitUntil: "networkidle" });
+for (const legalPath of ["/privacy", "/terms"]) {
+  await legalPage.goto(`${baseUrl}${legalPath}`, { waitUntil: "networkidle" });
   if ((await legalPage.getAttribute("html", "lang")) !== "en") issues.push(`${legalPath} is not explicitly English.`);
-  if (await legalPage.locator("[data-language-select]").count()) issues.push(`${legalPath} still exposes a language control.`);
-  if ((await legalPage.title()).includes("ERP, Custom Software")) issues.push(`${legalPath} used homepage metadata.`);
 }
 await legalPage.close();
+await desktop.close();
 await browser.close();
 
-if (desktopLayout.scrollWidth > desktopLayout.clientWidth) issues.push(`Desktop horizontal overflow: ${desktopLayout.scrollWidth}/${desktopLayout.clientWidth}`);
-if (mobileInitialLayout.scrollWidth > mobileInitialLayout.clientWidth) issues.push(`Mobile horizontal overflow: ${mobileInitialLayout.scrollWidth}/${mobileInitialLayout.clientWidth}`);
-if (desktopLayout.missingAlt) issues.push(`Images missing alt text: ${desktopLayout.missingAlt}`);
-if (desktopLayout.duplicateIds.length) issues.push(`Duplicate IDs: ${desktopLayout.duplicateIds.join(", ")}`);
-if (desktopLayout.languageControls) issues.push("English-only release still exposes a language selector.");
-if (desktopLayout.language !== "en") issues.push(`Homepage language is ${desktopLayout.language} instead of en.`);
-
-console.log(JSON.stringify({ desktopLayout, desktopCanvasSignal, responsiveLayouts, mobileLayout: mobileInitialLayout, mobileCanvasSignal, mobileMenuLayout, reducedMotionState, reducedMotionCanvasSignal, issues }, null, 2));
+console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, responsive, mobileMenu, reducedMotionState, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

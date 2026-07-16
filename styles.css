@@ -5062,94 +5062,24 @@ body.is-page-leaving .page-transition::after {
 }
 
 .portfolio-preview-toolbar {
-  display: grid;
+  display: flex;
   width: 78%;
-  min-height: 54px;
-  grid-template-columns: 42px minmax(0, 1fr) 42px;
-  gap: 12px;
+  min-height: 32px;
   align-items: center;
   justify-self: end;
-}
-
-.preview-control {
-  width: 42px;
-  height: 42px;
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(8, 19, 13, 0.82);
-  color: var(--surface);
-  backdrop-filter: blur(10px);
-}
-
-.preview-control:hover,
-.preview-control:focus-visible {
-  border-color: var(--green-bright);
-  background: rgba(73, 216, 151, 0.12);
-  color: var(--green-bright);
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--green-bright);
 }
 
 .portfolio-preview-status {
-  display: grid;
   min-width: 0;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 3px 12px;
-  align-items: center;
-}
-
-.portfolio-preview-status > span {
-  color: var(--green-bright);
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: 0;
 }
 
 .portfolio-preview-status > strong {
-  min-width: 0;
+  display: block;
   color: var(--surface);
-  font-size: 12px;
-  line-height: 1.25;
-}
-
-.portfolio-preview-dots {
-  display: flex;
-  grid-column: 1 / -1;
-  gap: 5px;
-  align-items: center;
-}
-
-.portfolio-preview-dots button {
-  position: relative;
-  width: 22px;
-  height: 14px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-
-.portfolio-preview-dots button::before {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.34);
-  content: "";
-  transform: translate(-50%, -50%);
-  transition: width 220ms ease, border-radius 220ms ease, background 220ms ease;
-}
-
-.portfolio-preview-dots button:hover::before,
-.portfolio-preview-dots button:focus-visible::before {
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.portfolio-preview-dots button.is-active::before {
-  width: 18px;
-  border-radius: 4px;
-  background: var(--green-bright);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -5196,19 +5126,9 @@ body.is-page-leaving .page-transition::after {
   }
 
   .portfolio-preview-toolbar {
-    width: 100%;
-    min-height: 50px;
-    grid-template-columns: 40px minmax(0, 1fr) 40px;
-    gap: 9px;
-  }
-
-  .preview-control {
-    width: 40px;
-    height: 40px;
-  }
-
-  .portfolio-preview-status {
-    gap: 2px 8px;
+    width: 86%;
+    min-height: 30px;
+    padding-inline-start: 10px;
   }
 
   .portfolio-preview-status > strong {

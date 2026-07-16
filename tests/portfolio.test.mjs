@@ -79,6 +79,7 @@ test("multi-page structure keeps focused services and delivery phases", async ()
   const workPage = await readFile(join(projectRoot, "prototype-work.html"), "utf8");
   assert.equal((workPage.match(/data-project="/g) || []).length, 4);
   assert.equal((workPage.match(/data-preview-slide/g) || []).length, 4);
+  assert.doesNotMatch(workPage, /data-preview-(?:previous|next|dot|count)/);
   assert.equal((workPage.match(/data-client-logo/g) || []).length, 2);
   assert.match(workPage, /<h2 id="clients-title">Our Clients<\/h2>/);
   assert.match(workPage, /\/assets\/clients\/p-bakery\.webp/);

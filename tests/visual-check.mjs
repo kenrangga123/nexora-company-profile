@@ -183,33 +183,38 @@ if (!introShift.x || introShift.x === "0px" || !introShift.y || introShift.y ===
 
 const previewCarouselState = { sequence: [] };
 const readActivePreview = () => desktop.locator('[data-preview-slide][data-position="0"]').getAttribute("data-preview-project");
+const swipePreview = async (page, direction) => {
+  const previewBounds = await page.locator("[data-preview-carousel]").boundingBox();
+  if (!previewBounds) return;
+  const y = previewBounds.y + previewBounds.height * 0.52;
+  const startX = previewBounds.x + previewBounds.width * (direction === "right" ? 0.34 : 0.68);
+  const endX = previewBounds.x + previewBounds.width * (direction === "right" ? 0.68 : 0.34);
+  await page.mouse.move(startX, y);
+  await page.mouse.down();
+  await page.mouse.move(endX, y, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(820);
+};
+
 previewCarouselState.sequence.push(await readActivePreview());
-await desktop.click("[data-preview-next]");
-await desktop.waitForTimeout(820);
+await swipePreview(desktop, "right");
 previewCarouselState.sequence.push(await readActivePreview());
 await desktop.screenshot({ path: join(output, "prototype-carousel-rag.png"), fullPage: false });
-const previewBounds = await desktop.locator("[data-preview-carousel]").boundingBox();
-if (previewBounds) {
-  const y = previewBounds.y + previewBounds.height * 0.52;
-  await desktop.mouse.move(previewBounds.x + previewBounds.width * 0.34, y);
-  await desktop.mouse.down();
-  await desktop.mouse.move(previewBounds.x + previewBounds.width * 0.68, y, { steps: 8 });
-  await desktop.mouse.up();
-  await desktop.waitForTimeout(820);
-}
+await swipePreview(desktop, "right");
 previewCarouselState.sequence.push(await readActivePreview());
 await desktop.screenshot({ path: join(output, "prototype-carousel-faceswap.png"), fullPage: false });
-await desktop.locator("[data-preview-carousel]").focus();
-await desktop.keyboard.press("ArrowRight");
-await desktop.waitForTimeout(820);
+await swipePreview(desktop, "right");
 previewCarouselState.sequence.push(await readActivePreview());
 await desktop.screenshot({ path: join(output, "prototype-carousel-cctv.png"), fullPage: false });
-await desktop.click('[data-preview-dot="0"]');
-await desktop.waitForTimeout(820);
+await swipePreview(desktop, "left");
+previewCarouselState.leftSwipe = await readActivePreview();
+await swipePreview(desktop, "right");
+await swipePreview(desktop, "right");
 previewCarouselState.returnedTo = await readActivePreview();
-previewCarouselState.count = await desktop.locator("[data-preview-count]").textContent();
+previewCarouselState.visibleControls = await desktop.locator("[data-preview-previous], [data-preview-next], [data-preview-dot], [data-preview-count]").count();
 if (previewCarouselState.sequence.join(",") !== "erp,rag,faceswap,cctv") issues.push(`Prototype carousel order failed: ${previewCarouselState.sequence.join(",")}.`);
-if (previewCarouselState.returnedTo !== "erp" || previewCarouselState.count?.trim() !== "01 / 04") issues.push(`Prototype carousel did not return to ERP: ${JSON.stringify(previewCarouselState)}.`);
+if (previewCarouselState.leftSwipe !== "faceswap" || previewCarouselState.returnedTo !== "erp") issues.push(`Prototype swipe directions or looping failed: ${JSON.stringify(previewCarouselState)}.`);
+if (previewCarouselState.visibleControls !== 0) issues.push("Prototype carousel still exposed arrows, dots, or visual counts.");
 
 await desktop.locator(".client-band").scrollIntoViewIfNeeded();
 await desktop.waitForTimeout(760);
@@ -343,7 +348,7 @@ const reducedMotionState = await reducedMotionPage.evaluate(() => ({
 }));
 if (!reducedMotionState.allRevealsVisible || reducedMotionState.heroTransform !== "none") issues.push(`Reduced-motion state failed: ${JSON.stringify(reducedMotionState)}`);
 await reducedMotionPage.goto(`${baseUrl}/prototype-work`, { waitUntil: "networkidle" });
-await reducedMotionPage.locator("[data-preview-next]").evaluate((button) => button.click());
+await swipePreview(reducedMotionPage, "right");
 const reducedCarouselState = await reducedMotionPage.evaluate(() => ({
   active: document.querySelector('[data-preview-slide][data-position="0"]')?.dataset.previewProject,
   transition: Number.parseFloat(getComputedStyle(document.querySelector("[data-preview-slide]")).transitionDuration)

@@ -240,13 +240,11 @@ const t = (source, parameters = {}) =>
   const previewCarousel = $("[data-preview-carousel]");
   if (previewCarousel) {
     const previewSlides = $$("[data-preview-slide]", previewCarousel);
-    const previewDots = $$("[data-preview-dot]");
-    const previewCount = $("[data-preview-count]");
     const previewTitle = $(".portfolio-preview-status [data-preview-title]");
     let activePreview = 0;
     let previewGesture = null;
 
-    const renderPreview = (nextIndex, focusDot = false) => {
+    const renderPreview = (nextIndex) => {
       activePreview = (nextIndex + previewSlides.length) % previewSlides.length;
       previewSlides.forEach((slide, index) => {
         const position = (index - activePreview + previewSlides.length) % previewSlides.length;
@@ -255,24 +253,13 @@ const t = (source, parameters = {}) =>
         slide.classList.toggle("is-active", active);
         slide.setAttribute("aria-hidden", String(!active));
       });
-      previewDots.forEach((dot, index) => {
-        const active = index === activePreview;
-        dot.classList.toggle("is-active", active);
-        dot.setAttribute("aria-selected", String(active));
-        dot.tabIndex = active ? 0 : -1;
-      });
 
       const title = previewSlides[activePreview].dataset.previewTitle;
-      if (previewCount) previewCount.textContent = `${String(activePreview + 1).padStart(2, "0")} / ${String(previewSlides.length).padStart(2, "0")}`;
       if (previewTitle) previewTitle.textContent = title;
       previewCarousel.setAttribute("aria-label", `${title}, ${activePreview + 1} of ${previewSlides.length}`);
-      if (focusDot) previewDots[activePreview]?.focus();
     };
 
     const stepPreview = (direction) => renderPreview(activePreview + direction);
-    $("[data-preview-previous]")?.addEventListener("click", () => stepPreview(-1));
-    $("[data-preview-next]")?.addEventListener("click", () => stepPreview(1));
-    previewDots.forEach((dot) => dot.addEventListener("click", () => renderPreview(Number(dot.dataset.previewDot))));
 
     previewCarousel.addEventListener("keydown", (event) => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;

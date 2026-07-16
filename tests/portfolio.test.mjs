@@ -79,10 +79,19 @@ test("multi-page structure keeps focused services and delivery phases", async ()
   const workPage = await readFile(join(projectRoot, "prototype-work.html"), "utf8");
   assert.equal((workPage.match(/data-project="/g) || []).length, 4);
   assert.equal((workPage.match(/data-preview-slide/g) || []).length, 4);
+  assert.equal((workPage.match(/data-client-logo/g) || []).length, 2);
+  assert.match(workPage, /<h2 id="clients-title">Our Clients<\/h2>/);
+  assert.match(workPage, /\/assets\/clients\/p-bakery\.webp/);
+  assert.match(workPage, /\/assets\/clients\/playland\.webp/);
   assert.match(workPage, /01 \/ Prototype Work/);
   assert.ok(workPage.indexOf('data-preview-project="erp"') < workPage.indexOf('data-preview-project="rag"'));
   assert.ok(workPage.indexOf('data-preview-project="rag"') < workPage.indexOf('data-preview-project="faceswap"'));
   assert.ok(workPage.indexOf('data-preview-project="faceswap"') < workPage.indexOf('data-preview-project="cctv"'));
+
+  for (const clientAsset of ["assets/clients/p-bakery.webp", "assets/clients/playland.webp"]) {
+    const asset = await readFile(join(projectRoot, clientAsset));
+    assert.ok(asset.length > 10_000, `${clientAsset} should be a real optimized client asset`);
+  }
 
   const contactPage = await readFile(join(projectRoot, "contact.html"), "utf8");
   assert.match(contactPage, /id="inquiry-form"/);

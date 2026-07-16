@@ -211,6 +211,23 @@ previewCarouselState.count = await desktop.locator("[data-preview-count]").textC
 if (previewCarouselState.sequence.join(",") !== "erp,rag,faceswap,cctv") issues.push(`Prototype carousel order failed: ${previewCarouselState.sequence.join(",")}.`);
 if (previewCarouselState.returnedTo !== "erp" || previewCarouselState.count?.trim() !== "01 / 04") issues.push(`Prototype carousel did not return to ERP: ${JSON.stringify(previewCarouselState)}.`);
 
+await desktop.locator(".client-band").scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(760);
+const clientState = await desktop.evaluate(() => ({
+  heading: document.querySelector("#clients-title")?.textContent.trim() || "",
+  logos: [...document.querySelectorAll("[data-client-logo]")].map((logo) => ({
+    alt: logo.alt,
+    complete: logo.complete,
+    naturalWidth: logo.naturalWidth,
+    naturalHeight: logo.naturalHeight
+  }))
+}));
+if (clientState.heading !== "Our Clients") issues.push("Prototype Work did not expose the Our Clients heading.");
+if (clientState.logos.length !== 2 || clientState.logos.some((logo) => !logo.complete || !logo.naturalWidth || !logo.naturalHeight)) {
+  issues.push(`Client logos did not load correctly: ${JSON.stringify(clientState.logos)}.`);
+}
+await desktop.screenshot({ path: join(output, "client-band-desktop.png"), fullPage: false });
+
 const expectedFilterCounts = { "business-systems": 1, "generative-ai": 2, "computer-vision": 2, all: 4 };
 for (const [filter, expected] of Object.entries(expectedFilterCounts)) {
   await desktop.click(`[data-filter="${filter}"]`);
@@ -285,6 +302,11 @@ for (const viewport of [
     if (metrics.headingLeft < -1 || metrics.headingRight > metrics.clientWidth + 1) issues.push(`${definition.path} ${viewport.name} heading escaped the viewport.`);
     if (definition.key !== "contact" && metrics.visualWidth === 0) issues.push(`${definition.path} ${viewport.name} lost its visual focus.`);
     if (["laptop", "mobile"].includes(viewport.name)) await page.screenshot({ path: join(output, `page-${definition.key}-${viewport.name}.png`), fullPage: false });
+    if (definition.key === "prototype-work" && ["laptop", "mobile"].includes(viewport.name)) {
+      await page.locator(".client-band").scrollIntoViewIfNeeded();
+      await page.waitForTimeout(760);
+      await page.screenshot({ path: join(output, `client-band-${viewport.name}.png`), fullPage: false });
+    }
   }
 
   await page.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
@@ -339,5 +361,5 @@ await legalPage.close();
 await desktop.close();
 await browser.close();
 
-console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, previewCarouselState, responsive, mobileMenu, reducedMotionState, reducedCarouselState, issues }, null, 2));
+console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, previewCarouselState, clientState, responsive, mobileMenu, reducedMotionState, reducedCarouselState, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

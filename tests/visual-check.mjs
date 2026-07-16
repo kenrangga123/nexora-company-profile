@@ -173,13 +173,44 @@ if (!(await desktop.locator("[data-solution-title]").textContent()).includes("Au
 
 await waitForPage(desktop, pageDefinitions[2]);
 const introVisual = desktop.locator(".page-intro [data-scene-visual]");
-await desktop.locator(".page-intro").hover({ position: { x: 1100, y: 260 } });
+await desktop.locator(".page-intro").hover({ position: { x: 400, y: 260 } });
 await desktop.waitForTimeout(120);
 const introShift = await introVisual.evaluate((element) => ({
   x: element.style.getPropertyValue("--visual-shift-x"),
   y: element.style.getPropertyValue("--visual-shift-y")
 }));
 if (!introShift.x || introShift.x === "0px" || !introShift.y || introShift.y === "0px") issues.push("Prototype intro did not respond to pointer depth.");
+
+const previewCarouselState = { sequence: [] };
+const readActivePreview = () => desktop.locator('[data-preview-slide][data-position="0"]').getAttribute("data-preview-project");
+previewCarouselState.sequence.push(await readActivePreview());
+await desktop.click("[data-preview-next]");
+await desktop.waitForTimeout(820);
+previewCarouselState.sequence.push(await readActivePreview());
+await desktop.screenshot({ path: join(output, "prototype-carousel-rag.png"), fullPage: false });
+const previewBounds = await desktop.locator("[data-preview-carousel]").boundingBox();
+if (previewBounds) {
+  const y = previewBounds.y + previewBounds.height * 0.52;
+  await desktop.mouse.move(previewBounds.x + previewBounds.width * 0.34, y);
+  await desktop.mouse.down();
+  await desktop.mouse.move(previewBounds.x + previewBounds.width * 0.68, y, { steps: 8 });
+  await desktop.mouse.up();
+  await desktop.waitForTimeout(820);
+}
+previewCarouselState.sequence.push(await readActivePreview());
+await desktop.screenshot({ path: join(output, "prototype-carousel-faceswap.png"), fullPage: false });
+await desktop.locator("[data-preview-carousel]").focus();
+await desktop.keyboard.press("ArrowRight");
+await desktop.waitForTimeout(820);
+previewCarouselState.sequence.push(await readActivePreview());
+await desktop.screenshot({ path: join(output, "prototype-carousel-cctv.png"), fullPage: false });
+await desktop.click('[data-preview-dot="0"]');
+await desktop.waitForTimeout(820);
+previewCarouselState.returnedTo = await readActivePreview();
+previewCarouselState.count = await desktop.locator("[data-preview-count]").textContent();
+if (previewCarouselState.sequence.join(",") !== "erp,rag,faceswap,cctv") issues.push(`Prototype carousel order failed: ${previewCarouselState.sequence.join(",")}.`);
+if (previewCarouselState.returnedTo !== "erp" || previewCarouselState.count?.trim() !== "01 / 04") issues.push(`Prototype carousel did not return to ERP: ${JSON.stringify(previewCarouselState)}.`);
+
 const expectedFilterCounts = { "business-systems": 1, "generative-ai": 2, "computer-vision": 2, all: 4 };
 for (const [filter, expected] of Object.entries(expectedFilterCounts)) {
   await desktop.click(`[data-filter="${filter}"]`);
@@ -289,6 +320,13 @@ const reducedMotionState = await reducedMotionPage.evaluate(() => ({
   heroTransform: getComputedStyle(document.querySelector("[data-product-scene]")).transform
 }));
 if (!reducedMotionState.allRevealsVisible || reducedMotionState.heroTransform !== "none") issues.push(`Reduced-motion state failed: ${JSON.stringify(reducedMotionState)}`);
+await reducedMotionPage.goto(`${baseUrl}/prototype-work`, { waitUntil: "networkidle" });
+await reducedMotionPage.locator("[data-preview-next]").evaluate((button) => button.click());
+const reducedCarouselState = await reducedMotionPage.evaluate(() => ({
+  active: document.querySelector('[data-preview-slide][data-position="0"]')?.dataset.previewProject,
+  transition: Number.parseFloat(getComputedStyle(document.querySelector("[data-preview-slide]")).transitionDuration)
+}));
+if (reducedCarouselState.active !== "rag" || reducedCarouselState.transition > 0.001) issues.push(`Reduced-motion carousel failed: ${JSON.stringify(reducedCarouselState)}`);
 await reducedMotionPage.close();
 
 const legalPage = await browser.newPage({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
@@ -301,5 +339,5 @@ await legalPage.close();
 await desktop.close();
 await browser.close();
 
-console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, responsive, mobileMenu, reducedMotionState, issues }, null, 2));
+console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, previewCarouselState, responsive, mobileMenu, reducedMotionState, reducedCarouselState, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

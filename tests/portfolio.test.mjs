@@ -78,7 +78,11 @@ test("multi-page structure keeps focused services and delivery phases", async ()
 
   const workPage = await readFile(join(projectRoot, "prototype-work.html"), "utf8");
   assert.equal((workPage.match(/data-project="/g) || []).length, 4);
+  assert.equal((workPage.match(/data-preview-slide/g) || []).length, 4);
   assert.match(workPage, /01 \/ Prototype Work/);
+  assert.ok(workPage.indexOf('data-preview-project="erp"') < workPage.indexOf('data-preview-project="rag"'));
+  assert.ok(workPage.indexOf('data-preview-project="rag"') < workPage.indexOf('data-preview-project="faceswap"'));
+  assert.ok(workPage.indexOf('data-preview-project="faceswap"') < workPage.indexOf('data-preview-project="cctv"'));
 
   const contactPage = await readFile(join(projectRoot, "contact.html"), "utf8");
   assert.match(contactPage, /id="inquiry-form"/);

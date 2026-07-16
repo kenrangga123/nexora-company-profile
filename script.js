@@ -237,11 +237,102 @@ const t = (source, parameters = {}) =>
     });
   }
 
+  const previewCarousel = $("[data-preview-carousel]");
+  if (previewCarousel) {
+    const previewSlides = $$("[data-preview-slide]", previewCarousel);
+    const previewDots = $$("[data-preview-dot]");
+    const previewCount = $("[data-preview-count]");
+    const previewTitle = $(".portfolio-preview-status [data-preview-title]");
+    let activePreview = 0;
+    let previewGesture = null;
+
+    const renderPreview = (nextIndex, focusDot = false) => {
+      activePreview = (nextIndex + previewSlides.length) % previewSlides.length;
+      previewSlides.forEach((slide, index) => {
+        const position = (index - activePreview + previewSlides.length) % previewSlides.length;
+        const active = position === 0;
+        slide.dataset.position = String(position);
+        slide.classList.toggle("is-active", active);
+        slide.setAttribute("aria-hidden", String(!active));
+      });
+      previewDots.forEach((dot, index) => {
+        const active = index === activePreview;
+        dot.classList.toggle("is-active", active);
+        dot.setAttribute("aria-selected", String(active));
+        dot.tabIndex = active ? 0 : -1;
+      });
+
+      const title = previewSlides[activePreview].dataset.previewTitle;
+      if (previewCount) previewCount.textContent = `${String(activePreview + 1).padStart(2, "0")} / ${String(previewSlides.length).padStart(2, "0")}`;
+      if (previewTitle) previewTitle.textContent = title;
+      previewCarousel.setAttribute("aria-label", `${title}, ${activePreview + 1} of ${previewSlides.length}`);
+      if (focusDot) previewDots[activePreview]?.focus();
+    };
+
+    const stepPreview = (direction) => renderPreview(activePreview + direction);
+    $("[data-preview-previous]")?.addEventListener("click", () => stepPreview(-1));
+    $("[data-preview-next]")?.addEventListener("click", () => stepPreview(1));
+    previewDots.forEach((dot) => dot.addEventListener("click", () => renderPreview(Number(dot.dataset.previewDot))));
+
+    previewCarousel.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === "ArrowLeft") stepPreview(-1);
+      if (event.key === "ArrowRight") stepPreview(1);
+      if (event.key === "Home") renderPreview(0);
+      if (event.key === "End") renderPreview(previewSlides.length - 1);
+    });
+
+    previewCarousel.addEventListener("dragstart", (event) => event.preventDefault());
+    previewCarousel.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+      previewGesture = { id: event.pointerId, x: event.clientX, y: event.clientY, deltaX: 0, axis: null };
+      previewCarousel.classList.add("is-pressed");
+      if (event.pointerType === "mouse") previewCarousel.setPointerCapture(event.pointerId);
+    });
+
+    previewCarousel.addEventListener("pointermove", (event) => {
+      if (!previewGesture || previewGesture.id !== event.pointerId) return;
+      const deltaX = event.clientX - previewGesture.x;
+      const deltaY = event.clientY - previewGesture.y;
+      previewGesture.deltaX = deltaX;
+      if (!previewGesture.axis && Math.max(Math.abs(deltaX), Math.abs(deltaY)) > 8) {
+        previewGesture.axis = Math.abs(deltaX) > Math.abs(deltaY) ? "x" : "y";
+      }
+      if (previewGesture.axis !== "x") return;
+      event.preventDefault();
+      if (!previewCarousel.hasPointerCapture(event.pointerId)) previewCarousel.setPointerCapture(event.pointerId);
+      previewCarousel.classList.add("is-dragging");
+      const drag = Math.max(-82, Math.min(82, deltaX * 0.42));
+      previewCarousel.style.setProperty("--preview-drag-x", `${drag.toFixed(2)}px`);
+    });
+
+    const finishPreviewGesture = (event, allowChange) => {
+      if (!previewGesture || previewGesture.id !== event.pointerId) return;
+      const shouldChange = allowChange && previewGesture.axis === "x" && Math.abs(previewGesture.deltaX) >= 44;
+      const direction = previewGesture.deltaX > 0 ? 1 : -1;
+      if (shouldChange) stepPreview(direction);
+      previewCarousel.classList.remove("is-pressed", "is-dragging");
+      window.requestAnimationFrame(() => previewCarousel.style.setProperty("--preview-drag-x", "0px"));
+      if (previewCarousel.hasPointerCapture(event.pointerId)) previewCarousel.releasePointerCapture(event.pointerId);
+      previewGesture = null;
+    };
+
+    previewCarousel.addEventListener("pointerup", (event) => finishPreviewGesture(event, true));
+    previewCarousel.addEventListener("pointercancel", (event) => finishPreviewGesture(event, false));
+    renderPreview(0);
+  }
+
   if (!reduceMotion && window.matchMedia("(pointer: fine)").matches) {
     $$(".page-intro").forEach((intro) => {
       const visual = $("[data-scene-visual]", intro);
       if (!visual) return;
       intro.addEventListener("pointermove", (event) => {
+        if (event.target.closest("[data-preview-carousel]")) {
+          visual.style.setProperty("--visual-shift-x", "0px");
+          visual.style.setProperty("--visual-shift-y", "0px");
+          return;
+        }
         const bounds = intro.getBoundingClientRect();
         const x = (event.clientX - bounds.left) / bounds.width - 0.5;
         const y = (event.clientY - bounds.top) / bounds.height - 0.5;

@@ -232,7 +232,7 @@ const clientState = await desktop.evaluate(() => ({
   }))
 }));
 if (clientState.heading !== "Our Clients") issues.push("Prototype Work did not expose the Our Clients heading.");
-if (clientState.logos.length !== 2 || clientState.logos.some((logo) => !logo.complete || !logo.naturalWidth || !logo.naturalHeight)) {
+if (clientState.logos.length !== 4 || clientState.logos.some((logo) => !logo.complete || !logo.naturalWidth || !logo.naturalHeight)) {
   issues.push(`Client logos did not load correctly: ${JSON.stringify(clientState.logos)}.`);
 }
 await desktop.screenshot({ path: join(output, "client-band-desktop.png"), fullPage: false });

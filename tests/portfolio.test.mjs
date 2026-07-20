@@ -81,16 +81,18 @@ test("multi-page structure keeps focused services and delivery phases", async ()
   assert.equal((workPage.match(/data-preview-slide/g) || []).length, 4);
   assert.equal((workPage.match(/data-preview-open/g) || []).length, 4);
   assert.doesNotMatch(workPage, /data-preview-(?:previous|next|dot|count)/);
-  assert.equal((workPage.match(/data-client-logo/g) || []).length, 2);
+  assert.equal((workPage.match(/data-client-logo/g) || []).length, 4);
   assert.match(workPage, /<h2 id="clients-title">Our Clients<\/h2>/);
   assert.match(workPage, /\/assets\/clients\/p-bakery\.webp/);
   assert.match(workPage, /\/assets\/clients\/playland\.webp/);
+  assert.match(workPage, /\/assets\/clients\/pioneer\.webp/);
+  assert.match(workPage, /\/assets\/clients\/jmm-salon\.webp/);
   assert.match(workPage, /01 \/ Prototype Work/);
   assert.ok(workPage.indexOf('data-preview-project="erp"') < workPage.indexOf('data-preview-project="rag"'));
   assert.ok(workPage.indexOf('data-preview-project="rag"') < workPage.indexOf('data-preview-project="faceswap"'));
   assert.ok(workPage.indexOf('data-preview-project="faceswap"') < workPage.indexOf('data-preview-project="cctv"'));
 
-  for (const clientAsset of ["assets/clients/p-bakery.webp", "assets/clients/playland.webp"]) {
+  for (const clientAsset of ["assets/clients/p-bakery.webp", "assets/clients/playland.webp", "assets/clients/pioneer.webp", "assets/clients/jmm-salon.webp"]) {
     const asset = await readFile(join(projectRoot, clientAsset));
     assert.ok(asset.length > 10_000, `${clientAsset} should be a real optimized client asset`);
   }

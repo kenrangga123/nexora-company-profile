@@ -3379,8 +3379,8 @@ svg {
 
 .client-logo-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(32px, 6vw, 96px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(24px, 2.5vw, 52px);
 }
 
 .client-logo-list figure {
@@ -3391,9 +3391,13 @@ svg {
 }
 
 .client-logo-list img {
-  width: min(100%, 136px);
+  width: min(100%, 148px);
   height: 126px;
   object-fit: contain;
+}
+
+.client-logo-list .client-logo-wide {
+  width: min(100%, 190px);
 }
 
 .section-bar {
@@ -3801,6 +3805,10 @@ svg {
     gap: 42px;
   }
 
+  .client-logo-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .commitment-grid {
     grid-template-columns: 1fr;
   }
@@ -3902,6 +3910,10 @@ svg {
   .client-logo-list img {
     width: min(100%, 104px);
     height: 104px;
+  }
+
+  .client-logo-list .client-logo-wide {
+    width: min(100%, 150px);
   }
 
   .home-paths .section-heading h2,

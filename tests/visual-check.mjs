@@ -27,6 +27,7 @@ const executablePath = installedBrowsers.find(existsSync);
 const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
 const output = join(process.cwd(), "artifacts");
 const baseUrl = (process.env.BASE_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
+const entrySeenKey = "nexora.prototypeEntrySeen.v1";
 await mkdir(output, { recursive: true });
 
 const issues = [];
@@ -71,6 +72,14 @@ const waitForPage = async (page, definition) => {
   await page.waitForTimeout(780);
 };
 
+const markEntrySeen = (page) => page.addInitScript((key) => {
+  try {
+    window.localStorage.setItem(key, "true");
+  } catch {
+    // Ignore storage restrictions in browser test environments.
+  }
+}, entrySeenKey);
+
 const readPageState = (page) => page.evaluate(() => {
   const heading = document.querySelector("main h1");
   const activeDesktop = [...document.querySelectorAll(".desktop-nav [aria-current='page']")];
@@ -93,7 +102,33 @@ const readPageState = (page) => page.evaluate(() => {
   };
 });
 
+const firstVisitPage = await browser.newPage({ viewport: { width: 1366, height: 768 }, deviceScaleFactor: 1 });
+attachDiagnostics(firstVisitPage, "first-visit");
+await firstVisitPage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
+await firstVisitPage.waitForURL(/\/prototype-work$/);
+await firstVisitPage.locator("[data-preview-carousel]").waitFor({ state: "visible" });
+const firstVisitState = await firstVisitPage.evaluate((key) => ({
+  page: document.body.dataset.page,
+  path: window.location.pathname,
+  entrySeen: window.localStorage.getItem(key)
+}), entrySeenKey);
+if (firstVisitState.page !== "prototype-work" || firstVisitState.path !== "/prototype-work" || firstVisitState.entrySeen !== "true") {
+  issues.push(`First visit did not open Prototype Work: ${JSON.stringify(firstVisitState)}`);
+}
+await firstVisitPage.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
+await firstVisitPage.locator(".hero").waitFor({ state: "visible" });
+const homeAfterEntry = await firstVisitPage.evaluate(() => ({
+  page: document.body.dataset.page,
+  path: window.location.pathname,
+  activeRoute: document.querySelector(".desktop-nav [aria-current='page']")?.getAttribute("href") || ""
+}));
+if (homeAfterEntry.page !== "home" || homeAfterEntry.path !== "/" || homeAfterEntry.activeRoute !== "/") {
+  issues.push(`Home was not accessible after the first entry: ${JSON.stringify(homeAfterEntry)}`);
+}
+await firstVisitPage.close();
+
 const desktop = await browser.newPage({ viewport: { width: 1440, height: 960 }, deviceScaleFactor: 1 });
+await markEntrySeen(desktop);
 attachDiagnostics(desktop, "desktop");
 let submittedInquiry = null;
 await desktop.route("**/api/inquiry", async (route) => {
@@ -114,7 +149,7 @@ for (const definition of pageDefinitions) {
   if (state.duplicateIds.length) issues.push(`${definition.path} has duplicate IDs: ${state.duplicateIds.join(", ")}.`);
   if (state.language !== "en") issues.push(`${definition.path} language is ${state.language}.`);
   if (!state.pageReady) issues.push(`${definition.path} did not finish its page-entry transition.`);
-  if (!["home", "contact"].includes(definition.key) && (state.activeDesktop.length !== 1 || state.activeDesktop[0] !== definition.path)) {
+  if (definition.key !== "contact" && (state.activeDesktop.length !== 1 || state.activeDesktop[0] !== definition.path)) {
     issues.push(`${definition.path} did not expose one correct active desktop navigation item.`);
   }
   if (definition.key === "contact" && state.activeCta !== "/contact") issues.push("Contact CTA was not marked as the current page.");
@@ -141,7 +176,7 @@ const shellPriority = await desktop.evaluate(() => ({
   visibleBrandText: document.querySelector(".brand")?.textContent.trim() || "",
   transitionLayer: Boolean(document.querySelector("[data-page-transition]"))
 }));
-if (shellPriority.firstDesktopRoute !== "/prototype-work") issues.push("Desktop navigation does not lead with Prototype Work.");
+if (shellPriority.firstDesktopRoute !== "/") issues.push("Desktop navigation does not expose Home first.");
 if (shellPriority.visibleBrandText !== "N") issues.push("A brand wordmark is still visible in the header.");
 if (!shellPriority.transitionLayer) issues.push("Page transition layer was not mounted.");
 
@@ -291,6 +326,7 @@ for (const viewport of [
   { name: "mobile", width: 390, height: 844 }
 ]) {
   const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1 });
+  await markEntrySeen(page);
   attachDiagnostics(page, viewport.name);
   responsive[viewport.name] = {};
   for (const definition of pageDefinitions) {
@@ -343,6 +379,7 @@ await mobileMenuPage.screenshot({ path: join(output, "mobile-menu.png"), fullPag
 await mobileMenuPage.close();
 
 const reducedMotionPage = await browser.newPage({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" });
+await markEntrySeen(reducedMotionPage);
 attachDiagnostics(reducedMotionPage, "reduced-motion");
 await reducedMotionPage.goto(`${baseUrl}/`, { waitUntil: "networkidle" });
 await reducedMotionPage.waitForFunction(() => document.querySelector("[data-product-scene]")?.classList.contains("is-webgl-ready"), null, { timeout: 10000 });
@@ -370,5 +407,5 @@ await legalPage.close();
 await desktop.close();
 await browser.close();
 
-console.log(JSON.stringify({ desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, previewCarouselState, clientState, responsive, mobileMenu, reducedMotionState, reducedCarouselState, issues }, null, 2));
+console.log(JSON.stringify({ firstVisitState, homeAfterEntry, desktopPages, desktopCanvasSignal, homeStructure, shellPriority, transitionState, introShift, previewCarouselState, clientState, responsive, mobileMenu, reducedMotionState, reducedCarouselState, issues }, null, 2));
 if (issues.length) process.exitCode = 1;

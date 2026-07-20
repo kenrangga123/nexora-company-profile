@@ -73,8 +73,16 @@ test("multi-page structure keeps focused services and delivery phases", async ()
   assert.ok(homepage.indexOf('href="/prototype-work"') < homepage.indexOf('href="/services"'));
 
   const shell = await readFile(join(projectRoot, "site-shell.js"), "utf8");
+  assert.ok(shell.indexOf('key: "home"') < shell.indexOf('key: "prototype-work"'));
   assert.ok(shell.indexOf('key: "prototype-work"') < shell.indexOf('key: "services"'));
+  assert.equal((shell.match(/label: "Home"/g) || []).length, 1);
   assert.doesNotMatch(shell, />Nexora</);
+
+  const entryRedirect = await readFile(join(projectRoot, "entry-redirect.js"), "utf8");
+  assert.match(homepage, /<script src="\/entry-redirect\.js"><\/script>/);
+  assert.match(entryRedirect, /localStorage\.getItem\(entrySeenKey\)/);
+  assert.match(entryRedirect, /localStorage\.setItem\(entrySeenKey, "true"\)/);
+  assert.match(entryRedirect, /location\.replace\("\/prototype-work"\)/);
 
   const workPage = await readFile(join(projectRoot, "prototype-work.html"), "utf8");
   assert.equal((workPage.match(/data-project="/g) || []).length, 4);

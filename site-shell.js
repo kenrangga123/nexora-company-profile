@@ -1,10 +1,12 @@
 const navigation = [
+  { key: "home", label: "Home", href: "/" },
   { key: "prototype-work", label: "Prototype Work", href: "/prototype-work" },
   { key: "services", label: "Services", href: "/services" },
   { key: "solutions", label: "Solutions", href: "/solutions" },
   { key: "process", label: "Process", href: "/process" },
   { key: "about", label: "About", href: "/about" }
 ];
+const entrySeenKey = "nexora.prototypeEntrySeen.v1";
 
 const navigationLink = (item, activePage, className = "nav-link") => {
   const active = item.key === activePage;
@@ -15,6 +17,14 @@ export const mountSiteShell = () => {
   const activePage = document.body.dataset.page || "home";
   const headerHost = document.querySelector("[data-site-header]");
   const footerHost = document.querySelector("[data-site-footer]");
+
+  if (activePage === "prototype-work") {
+    try {
+      window.localStorage.setItem(entrySeenKey, "true");
+    } catch {
+      // Navigation remains usable when browser storage is unavailable.
+    }
+  }
 
   if (!document.querySelector("[data-page-transition]")) {
     document.body.insertAdjacentHTML(
@@ -45,7 +55,6 @@ export const mountSiteShell = () => {
         </div>
         <div class="mobile-menu" id="mobile-menu" data-mobile-menu aria-hidden="true">
           <nav aria-label="Mobile navigation">
-            <a class="${activePage === "home" ? "is-active" : ""}" href="/"${activePage === "home" ? ' aria-current="page"' : ""}>Home</a>
             ${navigation.map((item) => navigationLink(item, activePage, "")).join("")}
             <a class="mobile-menu-cta${activePage === "contact" ? " is-active" : ""}" href="/contact"${activePage === "contact" ? ' aria-current="page"' : ""}>Request consultation</a>
           </nav>

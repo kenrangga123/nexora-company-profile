@@ -94,7 +94,7 @@ test("multi-page structure keeps focused services and delivery phases", async ()
   assert.match(workPage, /\/assets\/clients\/p-bakery\.webp/);
   assert.match(workPage, /\/assets\/clients\/playland\.webp/);
   assert.match(workPage, /\/assets\/clients\/pioneer\.webp/);
-  assert.match(workPage, /\/assets\/clients\/jmm-salon\.webp/);
+  assert.match(workPage, /\/assets\/clients\/jmm-salon\.png/);
   assert.match(workPage, /01 \/ Prototype Work/);
   assert.ok(workPage.indexOf('data-preview-project="erp"') < workPage.indexOf('data-preview-project="rag"'));
   assert.ok(workPage.indexOf('data-preview-project="rag"') < workPage.indexOf('data-preview-project="faceswap"'));

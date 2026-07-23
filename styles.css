@@ -3263,81 +3263,130 @@ svg {
 
 .page-signal {
   position: relative;
-  width: min(100%, 580px);
-  height: 390px;
+  display: grid;
+  width: min(100%, 620px);
+  min-height: 360px;
+  grid-template-rows: auto 72px auto;
+  align-content: center;
   justify-self: end;
 }
 
 .page-signal::before,
 .page-signal::after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border: 1px solid rgba(73, 216, 151, 0.24);
-  border-radius: 50%;
-  content: "";
-  transform: translate(-50%, -50%);
+  display: none;
 }
 
-.page-signal::before {
-  width: 330px;
-  height: 330px;
-}
-
-.page-signal::after {
-  width: 220px;
-  height: 220px;
-}
-
-.signal-core,
-.signal-node {
-  position: absolute;
+.service-map-nodes {
   display: grid;
-  place-items: center;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.signal-node {
+  position: relative;
+  display: grid;
+  min-height: 118px;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 18px;
   border: 1px solid rgba(73, 216, 151, 0.42);
+  border-radius: 8px;
   background: #0b1912;
+}
+
+.signal-node::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 73px;
+  background: rgba(73, 216, 151, 0.34);
+  content: "";
+}
+
+.signal-node > b {
+  align-self: start;
+  color: rgba(73, 216, 151, 0.62);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.signal-node > :is(i, svg) {
+  grid-row: 2;
+  width: 28px;
+  height: 28px;
   color: var(--green-bright);
+}
+
+.signal-node > span {
+  display: grid;
+  grid-row: 2;
+  gap: 5px;
+}
+
+.signal-node strong {
+  color: var(--surface);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.signal-node small,
+.signal-core small {
+  color: var(--white-muted);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.service-map-flow {
+  position: relative;
+  display: grid;
+  width: calc(66.666% + 4px);
+  grid-template-columns: repeat(3, 1fr);
+  justify-self: center;
+  border-bottom: 1px solid rgba(73, 216, 151, 0.34);
+}
+
+.service-map-flow::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 22px;
+  background: rgba(73, 216, 151, 0.34);
+  content: "";
 }
 
 .signal-core {
   z-index: 2;
-  top: 50%;
-  left: 50%;
-  width: 112px;
-  height: 112px;
-  border-radius: 50%;
-  font-size: 44px;
-  transform: translate(-50%, -50%);
-}
-
-.signal-node {
-  width: 126px;
+  display: flex;
+  width: min(100%, 280px);
   min-height: 82px;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 24px;
+  gap: 16px;
+  align-items: center;
+  justify-self: center;
+  padding: 18px 22px;
+  border: 1px solid var(--green-bright);
+  border-radius: 8px;
+  background: #0d2118;
+  color: var(--green-bright);
 }
 
-.signal-node small {
-  margin-top: 4px;
-  color: var(--white-muted);
-  font-size: 11px;
+.signal-core > :is(i, svg) {
+  width: 34px;
+  height: 34px;
 }
 
-.signal-node-one {
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+.signal-core > span {
+  display: grid;
+  gap: 4px;
 }
 
-.signal-node-two {
-  right: 10px;
-  bottom: 30px;
-}
-
-.signal-node-three {
-  bottom: 30px;
-  left: 10px;
+.signal-core strong {
+  color: var(--surface);
+  font-size: 16px;
 }
 
 .page-main-section {
@@ -3398,6 +3447,10 @@ svg {
 
 .client-logo-list .client-logo-wide {
   width: min(100%, 190px);
+}
+
+.client-logo-list .client-logo-jmm {
+  transform: scale(1.65);
 }
 
 .section-bar {
@@ -3963,43 +4016,55 @@ svg {
   }
 
   .page-signal {
-    height: 250px;
+    height: auto;
+    min-height: 0;
+    grid-template-rows: auto 28px auto;
   }
 
-  .page-signal::before {
-    width: 220px;
-    height: 220px;
-  }
-
-  .page-signal::after {
-    width: 140px;
-    height: 140px;
-  }
-
-  .signal-core {
-    width: 76px;
-    height: 76px;
-    font-size: 30px;
+  .service-map-nodes {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .signal-node {
-    width: 92px;
-    min-height: 64px;
-    font-size: 19px;
+    width: auto;
+    min-height: 72px;
+    grid-template-columns: 24px 28px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    gap: 12px;
+    padding: 13px 16px;
+    font-size: inherit;
   }
 
-  .signal-node small {
-    font-size: 9px;
+  .signal-node::after {
+    display: none;
   }
 
-  .signal-node-two {
-    right: 0;
-    bottom: 8px;
+  .signal-node > b,
+  .signal-node > :is(i, svg),
+  .signal-node > span {
+    grid-row: 1;
   }
 
-  .signal-node-three {
-    bottom: 8px;
-    left: 0;
+  .signal-node > b {
+    align-self: center;
+  }
+
+  .service-map-flow {
+    width: 1px;
+    border-bottom: 0;
+    background: rgba(73, 216, 151, 0.34);
+  }
+
+  .service-map-flow::after {
+    display: none;
+  }
+
+  .signal-core {
+    width: min(100%, 280px);
+    height: auto;
+    min-height: 78px;
+    font-size: inherit;
   }
 
   .portfolio-preview-stack {
